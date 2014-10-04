@@ -1,3 +1,5 @@
+package classes;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -41,7 +43,7 @@ public class eSignServlet extends HttpServlet {
     private static final int pdfPageWidth = 523;
 
     private static final String srcFilePath ="resources/signDocument.pdf";
-    private static final String signatureImage ="resources/signature_anil.jpg";
+    public static final String signatureImagePath ="resources/signature_anil.jpg";
     
     private static HashMap<String, Signature> signatures = new HashMap<>();
 
@@ -94,7 +96,7 @@ public class eSignServlet extends HttpServlet {
             }else{
                 // show document for signing
                 request.setAttribute("pages", getPageCount(filePath));
-                request.getRequestDispatcher("signPdf.jsp").forward(request, response);
+                request.getRequestDispatcher("signDocument.jsp").forward(request, response);
                 
                 // clear signatures if any set from previous load.
                 signatures = new HashMap<>();
@@ -106,7 +108,7 @@ public class eSignServlet extends HttpServlet {
     }
     
     private void downloadSignedPdf(HttpServletResponse response) throws Exception {
-        Image img = Image.getInstance(getServletContext().getRealPath(signatureImage));
+        Image img = Image.getInstance(getServletContext().getRealPath(signatureImagePath));
         PdfReader reader = new PdfReader(getServletContext().getRealPath(srcFilePath));
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PdfStamper stamper = new PdfStamper(reader, os);
@@ -201,40 +203,4 @@ public class eSignServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
-    
-    private static class Signature{
-        private String signatureId = "";
-        private int page = 0;
-        private int left = 0;
-        private int top = 0;
-        
-        public Signature(String signatureId, int page){
-            this.signatureId = signatureId;
-            this.page = page;
-        }
-        
-        public String getSignatureId(){
-            return signatureId;
-        }
-        
-        public int getPage(){
-            return page;
-        }
-        
-        public int getLeft(){
-            return left;
-        }
-        
-        public int getTop(){
-            return top;
-        }
-        
-        public void setLeft(int left){
-            this.left = left;
-        }
-        
-        public void setTop(int top){
-            this.top = top;
-        }
-    }
 }
