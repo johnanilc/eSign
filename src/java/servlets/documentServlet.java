@@ -4,11 +4,11 @@
  * and open the template in the editor.
  */
 
-package classes;
+package servlets;
 
-import Db.DbConnection;
-import static classes.eSignServlet.signatureImagePath;
-import classes.userServlet.Document;
+import classes.Document;
+import classes.DocumentSignature;
+import static servlets.eSignServlet.signatureImagePath;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfReader;
@@ -16,9 +16,6 @@ import com.itextpdf.text.pdf.PdfStamper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,20 +45,20 @@ public class documentServlet extends HttpServlet {
             throws ServletException, IOException {
         try{
             int documentId = Integer.parseInt(request.getParameter("document_id"));
-            Document document = getDocument(documentId);
+            Document document = Document.getDocument(documentId);
             PdfReader reader = new PdfReader(document.getContent());
             
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             PdfStamper stamper = new PdfStamper(reader, os);
             
             Image signatureImage = Image.getInstance(getServletContext().getRealPath(signatureImagePath));
-            ArrayList<Signature> signatures = new ArrayList<>();
+            ArrayList<DocumentSignature> signatures = new ArrayList<>();
             try{
-                for (Signature signature : signatures){
-                    float x = signature.getLeft();
-                    float y = signature.getTop();
+                for (DocumentSignature signature : signatures){
+                    int x = signature.getSignLocationX();
+                    int y = signature.getSignLocationY();
                     signatureImage.setAbsolutePosition(x, y);
-                    PdfContentByte canvas = stamper.getOverContent(signature.getPage()+1);
+                    PdfContentByte canvas = stamper.getOverContent(signature.getPageNumber()+1);
                     canvas.addImage(signatureImage);
                 }
             }finally{
@@ -77,23 +74,6 @@ public class documentServlet extends HttpServlet {
         }   catch (Exception ex) {
             Logger.getLogger(documentServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
-    
-    private Document getDocument(int documentId) throws Exception{
-        Document document = new Document(documentId);
-         try (Connection conn = DbConnection.getConnection()){
-            String sql = "select * from document where document_id = " + documentId;
-            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-                while(rs.next()){
-                    document.setName(rs.getString("name"));
-                    document.setContent(rs.getBlob("content").getBinaryStream());
-                    document.setUpdatedDate(rs.getTimestamp("date_updated"));
-                    document.setOwnerId(rs.getInt("owner_id"));
-                }
-            }
-        }
-         
-        return document;
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

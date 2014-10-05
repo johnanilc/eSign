@@ -110,7 +110,7 @@
                  var xmlHttp = new XMLHttpRequest();
                  xmlHttp.open("POST", "eSignServlet", true);
                  xmlHttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-                 xmlHttp.send("signatureId=" + signatureId + "&page=" + page + "&left=" + left + "&top=" + top);
+                 xmlHttp.send("signature_id=" + signatureId + "&page=" + page + "&left=" + left + "&top=" + top);
             }
         </script>
 

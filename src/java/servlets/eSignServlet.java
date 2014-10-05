@@ -1,11 +1,11 @@
-package classes;
+package servlets;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
+import classes.Document;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfReader;
@@ -33,36 +33,34 @@ import org.apache.pdfbox.pdmodel.PDPage;
  */
 @WebServlet(urlPatterns = {"/eSignServlet"})
 public class eSignServlet extends HttpServlet {
-    
+
     private static final int pageImageWidth = 1224;
     private static final int pageImageHeight = 1584;
-    private static final float pageImageWidthFactor = (float)0.6;
+    private static final float pageImageWidthFactor = (float) 0.6;
     private static final float pageImageHeightFactor = (float) 0.5;
-    
+
     private static final int pdfPageHeight = 770;
     private static final int pdfPageWidth = 523;
 
-    private static final String srcFilePath ="resources/signDocument.pdf";
-    public static final String signatureImagePath ="resources/signature_anil.jpg";
-    
+    public static final String signatureImagePath = "resources/signature_anil.jpg";
+
     private static HashMap<String, Signature> signatures = new HashMap<>();
 
-    
-    
     protected void processPostRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String signatureId = request.getParameter("signatureId");
-        if (signatureId == null){
+        String signatureId = request.getParameter("signature_id");
+        if (signatureId == null) {
             // create pdf with signatures.
-            try{
-                System.out.println("Signing Document..."); 
-                downloadSignedPdf(response);
-            }catch (Exception e){
+            try {
+                int documentId = Integer.parseInt(request.getParameter("document_id"));
+                Document document = Document.getDocument(documentId);
+                downloadSignedPdf(response, document);
+            } catch (Exception e) {
                 System.out.println("Signing Failed " + e.getMessage());
             }
-        }else{
+        } else {
             // create/update signature location
             Signature sign = signatures.get(signatureId);
-            if (sign == null){
+            if (sign == null) {
                 int page = Integer.parseInt(request.getParameter("page"));
                 sign = new Signature(signatureId, page);
                 signatures.put(signatureId, sign);
@@ -75,7 +73,7 @@ public class eSignServlet extends HttpServlet {
             System.out.println("Updated Signature: " + signatureId);
         }
     }
-    
+
     /**
      * Processes requests for both HTTP <code>GET</code> method.
      *
@@ -87,50 +85,52 @@ public class eSignServlet extends HttpServlet {
     protected void processGetRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            String filePath = getServletContext().getRealPath(srcFilePath);
+            int documentId = Integer.parseInt(request.getParameter("document_id"));
             String pageNumber = request.getParameter("pageNum");
-            if (pageNumber != null){
+            
+            Document document = Document.getDocument(documentId);
+            if (pageNumber != null) {
                 // render pdf page as image.
                 int pageNum = Integer.parseInt(pageNumber);
-                renderPdfAsImage(response, filePath, pageNum);
-            }else{
+                renderPdfAsImage(response, document, pageNum);
+            } else {
                 // show document for signing
-                request.setAttribute("pages", getPageCount(filePath));
+                request.setAttribute("pages", getPageCount(document));
                 request.getRequestDispatcher("signDocument.jsp").forward(request, response);
-                
+
                 // clear signatures if any set from previous load.
                 signatures = new HashMap<>();
             }
-            
+
         } catch (Exception ex) {
             Logger.getLogger(eSignServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private void downloadSignedPdf(HttpServletResponse response) throws Exception {
+
+    private void downloadSignedPdf(HttpServletResponse response, Document document) throws Exception {
         Image img = Image.getInstance(getServletContext().getRealPath(signatureImagePath));
-        PdfReader reader = new PdfReader(getServletContext().getRealPath(srcFilePath));
+        PdfReader reader = new PdfReader(document.getContent());
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PdfStamper stamper = new PdfStamper(reader, os);
-        
+
         PdfContentByte canvas = stamper.getOverContent(1);
         System.out.println("Upper right x: " + canvas.getPdfDocument().right());
         System.out.println("Upper right y: " + canvas.getPdfDocument().top());
         System.out.println("Lower left x: " + canvas.getPdfDocument().left());
         System.out.println("Lower left y: " + canvas.getPdfDocument().bottom());
-                
-        try{
-            for (Signature signature : signatures.values()){
+
+        try {
+            for (Signature signature : signatures.values()) {
                 float x = signature.getLeft(); //* (pdfPageWidth / (pageImageWidth * pageImageWidthFactor));
                 float y = signature.getTop();// * (pdfPageHeight / (pageImageHeight * pageImageHeightFactor));
-                img.setAbsolutePosition(36+x, 806-y-100);
-                canvas = stamper.getOverContent(signature.getPage()+1);
+                img.setAbsolutePosition(36 + x, 806 - y - 100);
+                canvas = stamper.getOverContent(signature.getPage() + 1);
                 canvas.addImage(img);
             }
-        }finally{
+        } finally {
             stamper.close();
         }
-        
+
         // download signed pdf.
         response.setContentType("application/pdf");
         response.addHeader("Content-Disposition", "attachment; filename=signedPdf.pdf");
@@ -139,17 +139,16 @@ public class eSignServlet extends HttpServlet {
         OutputStream responseOutputStream = response.getOutputStream();
         responseOutputStream.write(os.toByteArray());
     }
-    
-    private int getPageCount(String filePath) throws Exception {
-         try (PDDocument doc = PDDocument.load(filePath)) {
+
+    private int getPageCount(Document document) throws Exception {
+        try (PDDocument doc = PDDocument.load(document.getContent())) {
             List<PDPage> pages = doc.getDocumentCatalog().getAllPages();
             return (pages != null) ? pages.size() : 0;
-         }
+        }
     }
-    
-    
-    private void renderPdfAsImage(HttpServletResponse response, String filePath, int pageNum) throws Exception {
-          try (PDDocument doc = PDDocument.load(filePath)) {
+
+    private void renderPdfAsImage(HttpServletResponse response, Document document, int pageNum) throws Exception {
+        try (PDDocument doc = PDDocument.load(document.getContent())) {
             List<PDPage> pages = doc.getDocumentCatalog().getAllPages();
             PDPage page = pages.get(pageNum);
             BufferedImage image = page.convertToImage();
@@ -163,7 +162,6 @@ public class eSignServlet extends HttpServlet {
             response.getOutputStream().write(imageBytes);
         }
     }
-    
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
@@ -203,4 +201,41 @@ public class eSignServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
+
+    private class Signature {
+
+        private String signatureId = "";
+        private int page = 0;
+        private int left = 0;
+        private int top = 0;
+
+        public Signature(String signatureId, int page) {
+            this.signatureId = signatureId;
+            this.page = page;
+        }
+
+        public String getSignatureId() {
+            return signatureId;
+        }
+
+        public int getPage() {
+            return page;
+        }
+
+        public int getLeft() {
+            return left;
+        }
+
+        public int getTop() {
+            return top;
+        }
+
+        public void setLeft(int left) {
+            this.left = left;
+        }
+
+        public void setTop(int top) {
+            this.top = top;
+        }
+    }
 }
