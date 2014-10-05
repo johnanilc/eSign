@@ -13,7 +13,7 @@
     </head>
     <body>
         <h1>Login</h1>
-        <form method="post" action="userServlet" enctype="multipart/form-data">
+        <form method="post" action="loginServlet" enctype="multipart/form-data">
             <table width="100%">
                 <tr>
                     <td>

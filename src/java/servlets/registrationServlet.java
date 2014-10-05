@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package servlets;
 
 import Db.DbConnection;
@@ -44,69 +43,66 @@ public class registrationServlet extends HttpServlet {
             String password = request.getParameter("password");
             String confirmPassword = request.getParameter("confirm_password");
             String emailId = request.getParameter("email_id");
-            
+
             String validations = validateUser(userName, password, confirmPassword, emailId);
-            
-            if (validations.length() > 0){
+
+            if (validations.length() > 0) {
                 request.setAttribute("errors", validations);
                 request.getRequestDispatcher("signup.jsp").forward(request, response);
             }
-            
+
             User esignUser = new User(userName, password, emailId, new Date());
             esignUser.insert();
-            
+
             request.getRequestDispatcher("login.jsp").forward(request, response);
         } catch (Exception ex) {
             Logger.getLogger(registrationServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private String validateUser(String userName, String password, String confirmPassword, String emailId){
-         StringBuilder validations = new StringBuilder();
-         
-          if (userName == null || userName.length() == 0){
-            validations.append("Please specify a user name.");   
+
+    private String validateUser(String userName, String password, String confirmPassword, String emailId) {
+        if (userName == null || userName.length() == 0) {
+            return "Please specify a user name.";
         }
-        
-        if (password == null || password.length() == 0){
-            validations.append("<br/>Please specify a password.");
+
+        if (password == null || password.length() == 0) {
+            return "Please specify a password.";
         }
-        
-        if (confirmPassword == null || confirmPassword.length() == 0){
-            validations.append("<br/>Please confirm password.");
+
+        if (confirmPassword == null || confirmPassword.length() == 0) {
+            return "Please confirm password.";
         }
-        
-        if (!password.equals(confirmPassword)){
-            validations.append("<br/>Passwords do not match.");
+
+        if (!password.equals(confirmPassword)) {
+            return "Passwords do not match.";
         }
-        
-        if (emailId == null || emailId.length() == 0){
-            validations.append("<br/>Please specify an email address.");
+
+        if (emailId == null || emailId.length() == 0) {
+            return "Please specify an email address.";
         }
-        
+
         try {
-            if (isDuplicateEmail(emailId)){
-                validations.append("<br/>Email address already exists.");
+            if (isDuplicateEmail(emailId)) {
+                return "Email address already exists.";
             }
         } catch (Exception ex) {
             Logger.getLogger(registrationServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        return validations.toString();
+
+        return "";
     }
-    
-    private boolean isDuplicateEmail(String emailId) throws Exception{
-        try (Connection conn = DbConnection.getConnection()){
+
+    private boolean isDuplicateEmail(String emailId) throws Exception {
+        try (Connection conn = DbConnection.getConnection()) {
             String sql = "select * from user where email_id = '" + emailId + "'";
             try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-                if(rs.next()){
-                  return true;
+                if (rs.next()) {
+                    return true;
                 }
             }
         }
         return false;
     }
-            
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
