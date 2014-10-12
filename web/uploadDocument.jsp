@@ -40,7 +40,7 @@
             <table width="100%">
                 <tr>
                     <td colspan="2">
-                        <img src="/userServlet?signature_image=1" />
+                        <img src="userServlet?signature_image=1" />
                     </td>
                 </tr>
             </table>
@@ -84,14 +84,14 @@
                     <%=idx+1%>
                 </td>
                 <td>
-                    <a href="/documentServlet?document_id=<%=documents.get(idx).getDocumentId()%>"><%=documents.get(idx).getName()%></a>
+                    <a href="documentServlet?document_id=<%=documents.get(idx).getDocumentId()%>"><%=documents.get(idx).getName()%></a>
                 </td>
                 <td>
                      <%=documents.get(idx).getUpdatedDate()%>
                 </td>
                 <% if( ((UserSession)request.getSession().getAttribute("user_session")).getUser().getSignature() != null) {%>
                 <td>
-                    <a href="/eSignServlet?document_id=<%=documents.get(idx).getDocumentId()%>">Sign Now</a>
+                    <a href="eSignServlet?document_id=<%=documents.get(idx).getDocumentId()%>">Sign Now</a>
                 </td>
                 <% } %>
             </tr>

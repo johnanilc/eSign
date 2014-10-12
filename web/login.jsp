@@ -13,14 +13,14 @@
     </head>
     <body>
         <h1>Login</h1>
-        <form method="post" action="loginServlet" enctype="multipart/form-data">
+        <form method="post" action="loginServlet">
             <table width="100%">
                 <tr>
                     <td>
                         User Name
                     </td>
                     <td>
-                        <input type="text" id="user_name" />
+                        <input type="text" name="user_name" />
                     </td>
                 </tr>
                 <tr>
@@ -28,7 +28,7 @@
                         Password
                     </td>
                     <td>
-                        <input type="password" id="password" />
+                        <input type="password" name="password" />
                     </td>
                 </tr>
                 <tr>

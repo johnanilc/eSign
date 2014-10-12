@@ -13,14 +13,14 @@
     </head>
     <body>
         <h1>Register User</h1>
-        <form method="post" action="registrationServlet" enctype="multipart/form-data">
+        <form method="post" action="registrationServlet">
             <table width="100%">
                 <tr>
                     <td>
                         User Name
                     </td>
                     <td>
-                        <input type="text" id="user_name" />
+                        <input type="text" name="user_name" />
                     </td>
                 </tr>
                 <tr>
@@ -28,7 +28,7 @@
                         Email Id
                     </td>
                     <td>
-                        <input type="text" id="email_id" />
+                        <input type="text" name="email_id" />
                     </td>
                 </tr>
                 <tr>
@@ -36,7 +36,7 @@
                         Password
                     </td>
                     <td>
-                        <input type="password" id="password" />
+                        <input type="password" name="password" />
                     </td>
                 </tr>
                 <tr>
@@ -44,13 +44,13 @@
                         Confirm Password
                     </td>
                     <td>
-                        <input type="password" id="confirm_password" />
+                        <input type="password" name="confirm_password" />
                     </td>
                 </tr>
                 <tr>
                     <td/>
                     <td>
-                        <input type="submit" value="Save">
+                        <input type="submit" value="Save" />
                     </td>
                 </tr>
                 <tr>

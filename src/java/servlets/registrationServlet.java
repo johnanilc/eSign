@@ -48,13 +48,13 @@ public class registrationServlet extends HttpServlet {
 
             if (validations.length() > 0) {
                 request.setAttribute("errors", validations);
-                request.getRequestDispatcher("signup.jsp").forward(request, response);
+                response.sendRedirect("signup.jsp");
             }
 
             User esignUser = new User(userName, password, emailId, new Date());
             esignUser.insert();
 
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            response.sendRedirect("login.jsp");
         } catch (Exception ex) {
             Logger.getLogger(registrationServlet.class.getName()).log(Level.SEVERE, null, ex);
         }

@@ -6,10 +6,13 @@
 package classes;
 
 import Db.DbConnection;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.Date;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  *
@@ -30,12 +33,32 @@ public class User {
         this.createdDate = createdDate;
     }
     
+    public User(int userId){
+        this.userId = userId;
+    }
+    
     public int getUserId(){
         return userId;
     }
     
     public InputStream getSignature(){
         return signature;
+    }
+    
+    public void setUserName(String userName){
+        this.userName = userName;
+    }
+    
+    public void setPassword(String password){
+        this.password = password;
+    }
+    
+    public void setEmailId(String emailId){
+        this.emailId = emailId;
+    }
+    
+    public void setCreatedDate(Date createdDate){
+        this.createdDate = createdDate;
     }
     
     public void setSignature(InputStream signature){
@@ -60,7 +83,7 @@ public class User {
 
     public void insertSignature() throws Exception {
         try (Connection conn = DbConnection.getConnection()) {
-            String sql = "UPDATE user SET signature = ? where userId = ?";
+            String sql = "UPDATE user SET signature = ? where user_id = ?";
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setBlob(1, signature);
             statement.setInt(2, userId);
@@ -70,5 +93,10 @@ public class User {
                 System.out.println("Signature saved into database");
             }
         }
+    }
+    
+    public static User getUser(HttpServletRequest request) {
+        UserSession session = (UserSession) request.getSession().getAttribute("user_session");
+        return session.getUser();
     }
 }

@@ -8,11 +8,7 @@ package servlets;
 
 import classes.Document;
 import classes.DocumentSignature;
-import static servlets.eSignServlet.signatureImagePath;
-import com.itextpdf.text.Image;
-import com.itextpdf.text.pdf.PdfContentByte;
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.PdfStamper;
+import classes.User;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -46,24 +42,8 @@ public class documentServlet extends HttpServlet {
         try{
             int documentId = Integer.parseInt(request.getParameter("document_id"));
             Document document = Document.getDocument(documentId);
-            PdfReader reader = new PdfReader(document.getContent());
-            
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            PdfStamper stamper = new PdfStamper(reader, os);
-            
-            Image signatureImage = Image.getInstance(getServletContext().getRealPath(signatureImagePath));
-            ArrayList<DocumentSignature> signatures = new ArrayList<>();
-            try{
-                for (DocumentSignature signature : signatures){
-                    int x = signature.getSignLocationX();
-                    int y = signature.getSignLocationY();
-                    signatureImage.setAbsolutePosition(x, y);
-                    PdfContentByte canvas = stamper.getOverContent(signature.getPageNumber()+1);
-                    canvas.addImage(signatureImage);
-                }
-            }finally{
-                stamper.close();
-            }
+            ArrayList<DocumentSignature> signatures = getDocumentSignatures(documentId);
+            ByteArrayOutputStream os = DocumentSignature.getSignedDocument(document, User.getUser(request), signatures);
             
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "inline; filename=" + document.getName());
@@ -74,6 +54,12 @@ public class documentServlet extends HttpServlet {
         }   catch (Exception ex) {
             Logger.getLogger(documentServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private ArrayList<DocumentSignature> getDocumentSignatures(int documentId){
+        ArrayList<DocumentSignature> signatures =  new ArrayList<>();
+        // get document signatures from db.
+        return signatures;
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

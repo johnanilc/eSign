@@ -93,6 +93,20 @@ public class Document {
             }
         }
     }
+    
+    public void delete() throws Exception{
+        // delete all signatures
+        DocumentSignature.deleteSignatures(documentId);
+        try (Connection conn = DbConnection.getConnection()) {
+          String sql = "DELETE FROM document WHERE document_id = " + documentId;
+          PreparedStatement statement = conn.prepareStatement(sql);
+          // sends the statement to the database server
+          int row = statement.executeUpdate();
+          if (row > 0) {
+              System.out.println("Document deleted - " + documentId);
+          }
+        }
+    }
 
     public static Document getDocument(int documentId) throws Exception {
         Document document = new Document(documentId);

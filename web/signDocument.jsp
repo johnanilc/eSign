@@ -118,11 +118,12 @@
         <title>Sign Document</title>
     </head>
     <body>
-        <% int pages = ((Integer)request.getAttribute("pages")).intValue(); %>
+        <% int documentId = Integer.parseInt(request.getParameter("document_id")); %>
+        <% int pages = Integer.parseInt(request.getParameter("pages")); %>
         <table width="100%">
             <tr>
                 <td width="25%" align="right">
-                    <img id="signature" class="signature" src="resources/signature_anil.jpg" draggable="true" ondragstart="drag(event)"/>
+                    <img id="signature" class="signature" src="userServlet?signature_image=1" draggable="true" ondragstart="drag(event)"/>
                 </td>
                 <td width="50%" align="right" valign="top">
                     <table width="100%">
@@ -137,7 +138,7 @@
                                 <% for (int i = 0; i < pages; i++) {%>
                                 <% int zindex = pages-i; %>
                                     <div id="page<%=i%>" style="position:absolute; z-index:<%=zindex%>" ondrop="drop(event, <%=i%>)" ondragover="allowDrop(event)">
-                                        <img id="imgpage<%=i%>" style="border:1px solid black" src="eSignServlet?pageNum=<%=i%>" width="60%" height="50%" />
+                                        <img id="imgpage<%=i%>" style="border:1px solid black" src="eSignServlet?document_id=<%=documentId%>&page_num=<%=i%>" width="60%" height="50%" />
                                     </div>
                                 <%} %>
                             </td>

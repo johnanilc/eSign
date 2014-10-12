@@ -51,12 +51,14 @@ public class loginServlet extends HttpServlet {
                 HttpSession session = request.getSession();
                 session.setMaxInactiveInterval(300);
                 session.setAttribute("user_session", new UserSession(user, session.getId(), new Date()));
-                request.getRequestDispatcher("userServlet").forward(request, response);
+                response.sendRedirect("userServlet");
+                return;
             }
             
             // invalid user
             request.setAttribute("message", "Invalid user name or password.");
             request.getRequestDispatcher("login.jsp").forward(request, response);
+
         } catch (Exception ex) {
             Logger.getLogger(loginServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -64,10 +66,16 @@ public class loginServlet extends HttpServlet {
     
     private User getUser(String userName, String password) throws Exception{
         try (Connection conn = DbConnection.getConnection()){
-            String sql = "select * from user where userName = '" + userName + "' and password = '" + password + "'";
+            String sql = "select * from user where user_name = '" + userName + "' and password = '" + password + "'";
             try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
                 if(rs.next()){
-                  return new User(rs.getString("user_name"), rs.getString("password"), rs.getString("email_id"), rs.getDate("created_date"));
+                    User user = new User(rs.getInt("user_id"));
+                    user.setUserName(rs.getString("user_name"));
+                    user.setPassword(rs.getString("password"));
+                    user.setCreatedDate(rs.getDate("created_date"));
+                    user.setSignature(rs.getBinaryStream("signature"));
+                    user.setEmailId(rs.getString("email_id"));
+                    return user;
                 }
             }
         }

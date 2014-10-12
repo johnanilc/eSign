@@ -11,6 +11,7 @@ import classes.User;
 import classes.UserSession;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -46,7 +47,7 @@ public class userServlet extends HttpServlet {
     protected void processPostRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            User user = getUser(request);
+            User user = User.getUser(request);
 
             Part filePart;
             if (request.getPart("document") != null) {
@@ -85,29 +86,13 @@ public class userServlet extends HttpServlet {
         }
     }
 
-    private User getUser(HttpServletRequest request) {
-        UserSession session = (UserSession) request.getSession().getAttribute("user_session");
-        return session.getUser();
-    }
-
     protected void processGetRequest(HttpServletRequest request, HttpServletResponse response) {
         try {
-            User user = getUser(request);
+            User user = User.getUser(request);
             if (request.getParameter("signature_image") != null) {
                 // get signature image
                 if (user.getSignature() != null) {
-                    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-
-                    int numRead;
-                    byte[] buf = new byte[1024];
-                    while ((numRead = user.getSignature().read(buf)) >= 0) {
-                        outStream.write(buf, 0, numRead);
-                    }
-                    
-                    byte[] imageBytes = outStream.toByteArray();
-                    response.setContentType("image/jpeg");
-                    response.setContentLength(imageBytes.length);
-                    response.getOutputStream().write(imageBytes);
+                  renderSignatureImage(user.getSignature(), response);
                 }
             } else {
                 // show user dashboard
@@ -118,6 +103,22 @@ public class userServlet extends HttpServlet {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+    }
+    
+    private void renderSignatureImage(InputStream signature, HttpServletResponse response) throws Exception {
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+
+        int numRead;
+        byte[] buf = new byte[1024];
+        while ((numRead = signature.read(buf)) >= 0) {
+            outStream.write(buf, 0, numRead);
+        }
+        signature.reset();
+
+        byte[] imageBytes = outStream.toByteArray();
+        response.setContentType("image/jpeg");
+        response.setContentLength(imageBytes.length);
+        response.getOutputStream().write(imageBytes);
     }
 
     private String getFileName(Part part) {
