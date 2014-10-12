@@ -8,7 +8,6 @@ package servlets;
 import Db.DbConnection;
 import classes.Document;
 import classes.User;
-import classes.UserSession;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

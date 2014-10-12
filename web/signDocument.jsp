@@ -147,7 +147,8 @@
                 </td>
                 <td width="25%">
                     <form name="signDocument" method="post" action="eSignServlet">
-                        <input type="submit" value="Submit" />
+                        <input type="hidden" name="document_id" value="<%=documentId%>" />
+                        <input type="submit" value="Sign" />
                     </form>
                 </td>
             </tr>

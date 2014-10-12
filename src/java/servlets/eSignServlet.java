@@ -49,30 +49,36 @@ public class eSignServlet extends HttpServlet {
     private static HashMap<String, Signature> signatures = new HashMap<>();
 
     protected void processPostRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String signatureId = request.getParameter("signature_id");
-        if (signatureId == null) {
-            // create pdf with signatures.
-            try {
+        try {
+            String signatureId = request.getParameter("signature_id");
+            if (signatureId != null) {
+                // create/update signature location
+                Signature sign = signatures.get(signatureId);
+                if (sign == null) {
+                    int page = Integer.parseInt(request.getParameter("page"));
+                    sign = new Signature(signatureId, page);
+                    signatures.put(signatureId, sign);
+                    System.out.println("Created New Signature: " + signatureId);
+                }
+                int left = Integer.parseInt(request.getParameter("left"));
+                int top = Integer.parseInt(request.getParameter("top"));
+                sign.setLeft(left);
+                sign.setTop(top);
+                System.out.println("Updated Signature: " + signatureId);
+                return;
+            }
+            
+            if (!signatures.isEmpty()){
+                 // create pdf with signatures.
                 int documentId = Integer.parseInt(request.getParameter("document_id"));
                 Document document = Document.getDocument(documentId);
                 downloadSignedPdf(response, document, User.getUser(request));
-            } catch (Exception e) {
-                System.out.println("Signing Failed " + e.getMessage());
             }
-        } else {
-            // create/update signature location
-            Signature sign = signatures.get(signatureId);
-            if (sign == null) {
-                int page = Integer.parseInt(request.getParameter("page"));
-                sign = new Signature(signatureId, page);
-                signatures.put(signatureId, sign);
-                System.out.println("Created New Signature: " + signatureId);
-            }
-            int left = Integer.parseInt(request.getParameter("left"));
-            int top = Integer.parseInt(request.getParameter("top"));
-            sign.setLeft(left);
-            sign.setTop(top);
-            System.out.println("Updated Signature: " + signatureId);
+            
+            request.getRequestDispatcher("userServlet").forward(request, response);
+            
+        } catch (Exception ex) {
+            Logger.getLogger(eSignServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -111,10 +117,6 @@ public class eSignServlet extends HttpServlet {
     private void downloadSignedPdf(HttpServletResponse response, Document document, User user) throws Exception {
         ArrayList<DocumentSignature> documentSignatures = getDocumentSignatures(document.getDocumentId(), user.getUserId());
         
-        if (documentSignatures.isEmpty()){
-            return;
-        }
-        
         // save the document signatures
         DocumentSignature.insertSignatures(document.getDocumentId(), documentSignatures);
         
@@ -135,7 +137,7 @@ public class eSignServlet extends HttpServlet {
         for (Signature signature : signatures.values()) {
             int x = 36 + signature.getLeft(); //* (pdfPageWidth / (pageImageWidth * pageImageWidthFactor));
             int y = 806 - signature.getTop() - 100;// * (pdfPageHeight / (pageImageHeight * pageImageHeightFactor));
-            documentSignatures.add(new DocumentSignature(documentId, userId, signature.getPage() + 1, x, y));
+            documentSignatures.add(new DocumentSignature(documentId, userId, signature.getPage(), x, y));
         }
         return documentSignatures;
     }
