@@ -29,29 +29,70 @@ import javax.servlet.http.HttpServletResponse;
 public class documentServlet extends HttpServlet {
 
     /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
+     * Processes requests for both HTTP <code>GET</code> method.
      *
      * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+    protected void processGetRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try{
+            boolean download = false;
             int documentId = Integer.parseInt(request.getParameter("document_id"));
+            if (request.getParameter("is_download") != null){
+                download = Boolean.parseBoolean(request.getParameter("is_download"));
+            }
             Document document = Document.getDocument(documentId);
-            ArrayList<DocumentSignature> signatures = getDocumentSignatures(documentId);
-            ByteArrayOutputStream os = DocumentSignature.getSignedDocument(document, User.getUser(request), signatures);
+            ByteArrayOutputStream os = DocumentSignature.getSignedDocument(document, User.getUser(request));
+            
+            String disposition;
+            if (download){
+                disposition = "attachment";
+            }else{
+                disposition = "inline";
+            }
+            disposition += "; filename=" + getFileNameWithoutExtn(document.getName()) + "_signed." + getFileExtn(document.getName());
             
             response.setContentType("application/pdf");
-            response.setHeader("Content-Disposition", "inline; filename=" + document.getName());
+            response.setHeader("Content-Disposition", disposition);
             response.setContentLength((int) os.size());
             
             OutputStream responseOutputStream = response.getOutputStream();
             responseOutputStream.write(os.toByteArray());
-        }   catch (Exception ex) {
+        }catch (Exception ex) {
+            Logger.getLogger(documentServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private String getFileNameWithoutExtn(String fileName){
+        return fileName.substring(0, fileName.lastIndexOf("."));
+    }
+    
+    private String getFileExtn(String fileName){
+        return fileName.substring(fileName.lastIndexOf("."));
+    }
+    
+     /**
+     * Processes requests for both HTTP <code>POST</code> method.
+     *
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    protected void processPostRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            int documentId = Integer.parseInt(request.getParameter("document_id"));
+            
+            // delete document.
+            Document.delete(documentId);
+            
+            // redirect the user to dashboard
+            response.sendRedirect("userServlet");
+        } catch (Exception ex) {
             Logger.getLogger(documentServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -74,7 +115,7 @@ public class documentServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        processGetRequest(request, response);
     }
 
     /**
@@ -88,7 +129,7 @@ public class documentServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        processPostRequest(request, response);
     }
 
     /**

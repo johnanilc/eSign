@@ -24,6 +24,7 @@ public class Document {
     private String name = "";
     private InputStream content = null;
     private Date updatedDate = null;
+    private Date lastSignedDate = null;
     private int ownerId = 0;
 
     public Document(int documentId) {
@@ -61,6 +62,14 @@ public class Document {
         DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
         return df.format(updatedDate);
     }
+    
+    public String getLastSignedDate(){
+        if (lastSignedDate == null){
+            return "";
+        }
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        return df.format(lastSignedDate);
+    }
 
     public void setUpdatedDate(Date updatedDate) {
         this.updatedDate = updatedDate;
@@ -72,6 +81,14 @@ public class Document {
 
     public void setOwnerId(int ownerId) {
         this.ownerId = ownerId;
+    }
+    
+    public void setLastSignedDate(Date lastSignedDate){
+        this.lastSignedDate = lastSignedDate;
+    }
+    
+    public boolean isSigned(){
+        return (lastSignedDate != null);
     }
 
     public void insert() throws Exception {
@@ -94,9 +111,13 @@ public class Document {
         }
     }
     
-    public void delete() throws Exception{
-        // delete all signatures
-        DocumentSignature.deleteSignatures(documentId);
+    public static void delete(int documentId) throws Exception{
+        // delete all signatures of all users in the document
+        DocumentSignature.deleteSignatures(documentId, 0);
+        
+        // TODO: delete all document signers
+        
+        // delete the document
         try (Connection conn = DbConnection.getConnection()) {
           String sql = "DELETE FROM document WHERE document_id = " + documentId;
           PreparedStatement statement = conn.prepareStatement(sql);
@@ -113,7 +134,7 @@ public class Document {
         try (Connection conn = DbConnection.getConnection()) {
             String sql = "select * from document where document_id = " + documentId;
             try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-                while (rs.next()) {
+                if (rs.next()) {
                     document.setName(rs.getString("name"));
                     document.setContent(rs.getBlob("content").getBinaryStream());
                     document.setUpdatedDate(rs.getTimestamp("date_updated"));

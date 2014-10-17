@@ -13,7 +13,7 @@
                 position: absolute;
                 left: 80px;
                 top: 200px;
-                width: 200px;
+                width: 175px;
                 background: none;
                 border: 2px solid rgba(0,0,0,0.5);
                 border-radius: 4px; padding: 8px;
@@ -98,6 +98,7 @@
                     sign.style.position = 'absolute';
                     sign.style.left = left + 'px';
                     sign.style.top = top + 'px';
+                    sign.style.width = '100px';
                     sign.addEventListener('dragstart', function() {drag(event);}, false);
                     ev.target.parentNode.appendChild(sign);
                     

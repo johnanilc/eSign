@@ -15,7 +15,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  *
@@ -29,6 +32,10 @@ public class DocumentSignature{
     private int pageNumber = 0;
     private int signLocationX = 0;
     private int signLocationY = 0;
+    
+    public DocumentSignature(int documentSignatureId){
+        this.documentSignatureId = documentSignatureId;
+    }
     
     public DocumentSignature(int documentId, int signerId, int pageNumber, int signLocationX, int signLocationY){
         this.documentId = documentId;
@@ -62,18 +69,45 @@ public class DocumentSignature{
         return signLocationY;
     }
     
-    public static void insertSignatures(int documentId, ArrayList<DocumentSignature> signatures) throws Exception{
-        // delete exisiting signatures of the document
-        deleteSignatures(documentId);
-        
-        for (DocumentSignature signature : signatures){
-            signature.insertSignature();
-        }
+    public void setDocumentId(int documentId){
+        this.documentId = documentId;
     }
     
-    public static void deleteSignatures(int documentId) throws Exception{
+    public void setSignerId(int signerId){
+        this.signerId = signerId;
+    }
+    
+    public void setPageNumber(int pageNumber){
+        this.pageNumber = pageNumber;
+    }
+    
+    public void setSignLocationX(int signLocationX){
+        this.signLocationX = signLocationX;
+    }
+    
+    public void setSignLocationY(int signLocationY){
+        this.signLocationY = signLocationY;
+    }
+    
+    public static void insertSignatures(int documentId, ArrayList<DocumentSignature> signatures, int signerId) throws Exception{
+        // delete exisiting signatures of the document
+        deleteSignatures(documentId, signerId);
+        
+        for (DocumentSignature signature : signatures){
+            // insert the signature
+            signature.insertSignature();
+        }
+        
+        // update last signed date of the document
+        updateLastSignedDate(documentId, new Date());
+    }
+    
+    public static void deleteSignatures(int documentId, int signerId) throws Exception{
           try (Connection conn = DbConnection.getConnection()) {
             String sql = "DELETE FROM document_signature WHERE document_id = " + documentId;
+            if (signerId > 0){
+                sql += " and signer_id = " + signerId;
+            }
             PreparedStatement statement = conn.prepareStatement(sql);
             // sends the statement to the database server
             int row = statement.executeUpdate();
@@ -101,24 +135,59 @@ public class DocumentSignature{
         }
     }
     
-    public static ByteArrayOutputStream getSignedDocument(Document document, User user, ArrayList<DocumentSignature> signatures) throws Exception{
+    private static void updateLastSignedDate (int documentId, Date signedDate) throws Exception{
+         try (Connection conn = DbConnection.getConnection()) {
+            String sql = "update document set last_signed_date = ? where document_id = ?";
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setTimestamp(1, new java.sql.Timestamp(signedDate.getTime()));
+            statement.setInt(2, documentId);
+
+            // sends the statement to the database server
+            int row = statement.executeUpdate();
+            if (row > 0) {
+                System.out.println("Document last signed date updated");
+            }
+        }
+    }
+    
+    public static ByteArrayOutputStream getSignedDocument(Document document, User user) throws Exception{
         PdfReader reader = new PdfReader(document.getContent());
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PdfStamper stamper = new PdfStamper(reader, os);
 
+        // get user signature
         Image signatureImage = Image.getInstance(getImageBytes(user.getSignature()));
         try{
-            for (DocumentSignature signature : signatures){
+            for (DocumentSignature signature : getDocumentSignatures(document.getDocumentId())){
                 int x = signature.getSignLocationX();
                 int y = signature.getSignLocationY();
                 signatureImage.setAbsolutePosition(x, y);
-                PdfContentByte canvas = stamper.getOverContent(signature.getPageNumber()+1);
+                PdfContentByte canvas = stamper.getOverContent(signature.getPageNumber());
                 canvas.addImage(signatureImage);
             }
             return os;
         }finally{
             stamper.close();
         }
+    }
+    
+    private static ArrayList<DocumentSignature> getDocumentSignatures(int documentId) throws Exception{
+        ArrayList<DocumentSignature> signatures = new ArrayList<>();
+         try (Connection conn = DbConnection.getConnection()) {
+            String sql = "select * from document_signature where document_id = " + documentId;
+            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+                while (rs.next()) {
+                    DocumentSignature signature = new DocumentSignature(rs.getInt("document_signature_id"));
+                    signature.setDocumentId(rs.getInt("document_id"));
+                    signature.setSignerId(rs.getInt("signer_id"));
+                    signature.setPageNumber(rs.getInt("page_number"));
+                    signature.setSignLocationX(rs.getInt("sign_location_x"));
+                    signature.setSignLocationY(rs.getInt("sign_location_y"));
+                    signatures.add(signature);
+                }
+            }
+        }
+        return signatures;
     }
     
     private static byte[] getImageBytes(InputStream signatureImage) throws Exception{

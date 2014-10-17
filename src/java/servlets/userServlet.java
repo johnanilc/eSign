@@ -141,6 +141,7 @@ public class userServlet extends HttpServlet {
                     document.setContent(rs.getBlob("content").getBinaryStream());
                     document.setUpdatedDate(rs.getTimestamp("date_updated"));
                     document.setOwnerId(rs.getInt("owner_id"));
+                    document.setLastSignedDate(rs.getTimestamp("last_signed_date"));
                     documents.add(document);
                 }
             }

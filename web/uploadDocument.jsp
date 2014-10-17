@@ -13,6 +13,15 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>My Documents</title>
+        <script type="text/javascript" lang="javascript">
+            function deleteDocument(documentName){
+                var canDelete = confirm("Are you sure you want to delete '" + documentName + "' along with all the signatures of all users?");
+                if (canDelete === true){
+                    return true;
+                }
+                return false;
+            }
+        </script>
     </head>
     <body>
         <h1>E-Sign Dashboard</h1>
@@ -69,13 +78,16 @@
         <table align="center" width="100%">
             <tr>
                 <td>
-                    Document #
+                    <b>Document #</b>
                 </td>
                 <td>
-                    Name
+                    <b>Name</b>
                 </td>
                 <td>
-                    Updated Date
+                    <b>Uploaded Date</b>
+                </td>
+                <td>
+                    <b>Last Signed Date</b>
                 </td>
             </tr>
             <% for (int idx=0; idx<documents.size(); idx++) {%>
@@ -89,11 +101,24 @@
                 <td>
                      <%=documents.get(idx).getUpdatedDate()%>
                 </td>
-                <% if( ((UserSession)request.getSession().getAttribute("user_session")).getUser().getSignature() != null) {%>
                 <td>
-                    <a href="eSignServlet?document_id=<%=documents.get(idx).getDocumentId()%>">Sign Now</a>
+                    <%=documents.get(idx).getLastSignedDate()%>
                 </td>
-                <% } %>
+                <td>
+                    <% if( ((UserSession)request.getSession().getAttribute("user_session")).getUser().getSignature() != null) {%>
+                        <a href="eSignServlet?document_id=<%=documents.get(idx).getDocumentId()%>">Sign</a>
+                    <% } %>
+                </td>
+                <td>
+                     <% if (documents.get(idx).isSigned()) {%>
+                        <a href="documentServlet?document_id=<%=documents.get(idx).getDocumentId()%>&is_download=true">Download Signed PDF</a>
+                    <% } %>
+                </td>
+                <td>        
+                    <form method="post" action="documentServlet">
+                        <input type="hidden" name="document_id" value="<%=documents.get(idx).getDocumentId()%>"/>
+                        <input type="submit" value="Delete" onclick="return deleteDocument(<%=documents.get(idx).getName()%>);"/></td>
+                    </form>
             </tr>
             <% } %>
         </table>    

@@ -6,8 +6,6 @@
 package classes;
 
 import Db.DbConnection;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

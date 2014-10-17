@@ -72,11 +72,10 @@ public class eSignServlet extends HttpServlet {
                  // create pdf with signatures.
                 int documentId = Integer.parseInt(request.getParameter("document_id"));
                 Document document = Document.getDocument(documentId);
-                downloadSignedPdf(response, document, User.getUser(request));
+                signDocument(response, document, User.getUser(request));
             }
             
-            request.getRequestDispatcher("userServlet").forward(request, response);
-            
+            response.sendRedirect("userServlet");
         } catch (Exception ex) {
             Logger.getLogger(eSignServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -114,30 +113,19 @@ public class eSignServlet extends HttpServlet {
         }
     }
 
-    private void downloadSignedPdf(HttpServletResponse response, Document document, User user) throws Exception {
-        ArrayList<DocumentSignature> documentSignatures = getDocumentSignatures(document.getDocumentId(), user.getUserId());
-        
+    private void signDocument(HttpServletResponse response, Document document, User user) throws Exception {
+        ArrayList<DocumentSignature> documentSignatures = getTranslatedDocumentSignatures(document.getDocumentId(), user.getUserId());
         // save the document signatures
-        DocumentSignature.insertSignatures(document.getDocumentId(), documentSignatures);
-        
-        ByteArrayOutputStream os = DocumentSignature.getSignedDocument(document, user, documentSignatures);
-
-        // download signed pdf.
-        response.setContentType("application/pdf");
-        response.addHeader("Content-Disposition", "attachment; filename=signedPdf.pdf");
-        response.setContentLength((int) os.size());
-
-        OutputStream responseOutputStream = response.getOutputStream();
-        responseOutputStream.write(os.toByteArray());
+        DocumentSignature.insertSignatures(document.getDocumentId(), documentSignatures, user.getUserId());
     }
     
-    private ArrayList<DocumentSignature> getDocumentSignatures(int documentId, int userId){
+    private ArrayList<DocumentSignature> getTranslatedDocumentSignatures(int documentId, int userId){
         // translate signature locations from image to document coordinate system.
         ArrayList<DocumentSignature> documentSignatures = new ArrayList<>();
         for (Signature signature : signatures.values()) {
             int x = 36 + signature.getLeft(); //* (pdfPageWidth / (pageImageWidth * pageImageWidthFactor));
             int y = 806 - signature.getTop() - 100;// * (pdfPageHeight / (pageImageHeight * pageImageHeightFactor));
-            documentSignatures.add(new DocumentSignature(documentId, userId, signature.getPage(), x, y));
+            documentSignatures.add(new DocumentSignature(documentId, userId, signature.getPage() + 1, x, y));
         }
         return documentSignatures;
     }
