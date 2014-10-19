@@ -5,7 +5,7 @@
  */
 package classes;
 
-import Db.DbConnection;
+import db.DbConnection;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -115,7 +115,8 @@ public class Document {
         // delete all signatures of all users in the document
         DocumentSignature.deleteSignatures(documentId, 0);
         
-        // TODO: delete all document signers
+        // delete all document signers
+        DocumentSigner.deleteSigners(documentId);
         
         // delete the document
         try (Connection conn = DbConnection.getConnection()) {
@@ -144,5 +145,43 @@ public class Document {
         }
 
         return document;
+    }
+    
+    public static class DocumentDetail{
+        private String ownerName = "";
+        private Document document = null;
+        
+        public DocumentDetail(String ownerName, Document document){
+            this.ownerName = ownerName;
+            this.document = document;
+        }
+        
+        public String getOwnerName(){
+            return ownerName;
+        }
+        
+        public String getLastSignedDate(){
+            return document.getLastSignedDate();
+        }
+        
+        public String getName(){
+            return document.getName();
+        }
+        
+        public String getUpdatedDate(){
+            return document.getUpdatedDate();
+        }
+        
+        public int getDocumentId(){
+            return document.getDocumentId();
+        }
+        
+        public boolean isSigned(){
+            return document.isSigned();
+        }
+        
+        public int getOwnerId(){
+            return document.getOwnerId();
+        }
     }
 }

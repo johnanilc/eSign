@@ -8,7 +8,6 @@ package servlets;
 
 import classes.Document;
 import classes.DocumentSignature;
-import classes.User;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -45,7 +44,7 @@ public class documentServlet extends HttpServlet {
                 download = Boolean.parseBoolean(request.getParameter("is_download"));
             }
             Document document = Document.getDocument(documentId);
-            ByteArrayOutputStream os = DocumentSignature.getSignedDocument(document, User.getUser(request));
+            ByteArrayOutputStream os = DocumentSignature.getSignedDocument(document);
             
             String disposition;
             if (download){

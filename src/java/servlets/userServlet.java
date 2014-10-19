@@ -5,16 +5,12 @@ package servlets;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-import Db.DbConnection;
 import classes.Document;
 import classes.User;
+import classes.UserSession;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,7 +42,7 @@ public class userServlet extends HttpServlet {
     protected void processPostRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            User user = User.getUser(request);
+            User user = getUser(request);
 
             Part filePart;
             if (request.getPart("document") != null) {
@@ -61,6 +57,11 @@ public class userServlet extends HttpServlet {
         } catch (Exception ex) {
             Logger.getLogger(userServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private User getUser(HttpServletRequest request){
+        UserSession session = (UserSession) request.getSession().getAttribute("user_session");
+        return session.getUser();
     }
 
     private void uploadSignature(HttpServletRequest request, Part filePart, User user) {
@@ -87,7 +88,7 @@ public class userServlet extends HttpServlet {
 
     protected void processGetRequest(HttpServletRequest request, HttpServletResponse response) {
         try {
-            User user = User.getUser(request);
+            User user = getUser(request);
             if (request.getParameter("signature_image") != null) {
                 // get signature image
                 if (user.getSignature() != null) {
@@ -95,9 +96,7 @@ public class userServlet extends HttpServlet {
                 }
             } else {
                 // show user dashboard
-                ArrayList<Document> documents = getUserDocuments(user.getUserId());
-                request.setAttribute("documents", documents);
-                request.getRequestDispatcher("uploadDocument.jsp").forward(request, response);
+                request.getRequestDispatcher("upload_document.jsp").forward(request, response);
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -129,26 +128,7 @@ public class userServlet extends HttpServlet {
         }
         return "";
     }
-
-    private ArrayList<Document> getUserDocuments(int userId) throws Exception {
-        ArrayList<Document> documents = new ArrayList<>();
-        try (Connection conn = DbConnection.getConnection()) {
-            String sql = "select * from document where owner_id = " + userId + " order by document_id desc";
-            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-                while (rs.next()) {
-                    Document document = new Document(rs.getInt("document_id"));
-                    document.setName(rs.getString("name"));
-                    document.setContent(rs.getBlob("content").getBinaryStream());
-                    document.setUpdatedDate(rs.getTimestamp("date_updated"));
-                    document.setOwnerId(rs.getInt("owner_id"));
-                    document.setLastSignedDate(rs.getTimestamp("last_signed_date"));
-                    documents.add(document);
-                }
-            }
-        }
-        return documents;
-    }
-
+    
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.

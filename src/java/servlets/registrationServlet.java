@@ -5,7 +5,8 @@
  */
 package servlets;
 
-import Db.DbConnection;
+import db.DbConnection;
+import classes.DocumentSigner;
 import classes.User;
 import java.io.IOException;
 import java.sql.Connection;
@@ -19,6 +20,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.validator.routines.EmailValidator;
 
 /**
  *
@@ -39,25 +41,100 @@ public class registrationServlet extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            String userName = request.getParameter("user_name");
-            String password = request.getParameter("password");
-            String confirmPassword = request.getParameter("confirm_password");
-            String emailId = request.getParameter("email_id");
-
-            String validations = validateUser(userName, password, confirmPassword, emailId);
-
-            if (validations.length() > 0) {
-                request.setAttribute("errors", validations);
-                response.sendRedirect("signup.jsp");
+            if (request.getParameter("add_signer") != null) {
+                addSigner(request, response);
+                return;
             }
 
-            User esignUser = new User(userName, password, emailId, new Date());
-            esignUser.insert();
-
-            response.sendRedirect("login.jsp");
+            registerNewUser(request, response);
         } catch (Exception ex) {
             Logger.getLogger(registrationServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private void addSigner(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String signerName = request.getParameter("signer_name");
+        String signerEmail = request.getParameter("signer_email");
+        int documentId = Integer.parseInt(request.getParameter("document_id"));
+
+        String validations = validateSigner(signerName, signerEmail);
+        if (validations.length() > 0) {
+            request.setAttribute("errors", validations);
+            response.sendRedirect("add_signer.jsp?document_id=" + documentId);
+            return;
+        }
+
+        if (!isDuplicateEmail(signerEmail)) {
+            // create new user
+            User esignUser = new User(signerName, "", signerEmail, new Date());
+            esignUser.insert();
+        }
+
+        User signer = User.getUser(signerEmail);
+
+        // add user to document signers.
+        DocumentSigner documentSigner = new DocumentSigner(documentId, signer.getUserId());
+        documentSigner.insert();
+
+        // refresh the page
+        response.sendRedirect("add_signer.jsp?document_id=" + documentId);
+    }
+
+    private String validateSigner(String signerName, String signerEmail) {
+        if (signerName == null || signerName.isEmpty()) {
+            return "Please specify the signer name.";
+        }
+
+        if (signerEmail == null || signerEmail.isEmpty()) {
+            return "Please specify the signer email.";
+        }
+
+        if (!EmailValidator.getInstance().isValid(signerEmail)) {
+            return "Please specify a valid email address.";
+        }
+
+        return "";
+    }
+
+    private void registerNewUser(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String userName = request.getParameter("user_name");
+        String password = request.getParameter("password");
+        String confirmPassword = request.getParameter("confirm_password");
+        String emailId = request.getParameter("email_id");
+
+        String validations = validateUser(userName, password, confirmPassword, emailId);
+
+        if (validations.length() > 0) {
+            request.setAttribute("errors", validations);
+            response.sendRedirect("signup.jsp");
+            return;
+        }
+
+        if (isDuplicateEmail(emailId)) {
+            // email already exists
+
+            // if the user has a password, then this is an existing user so do not allow duplicate user
+            // if the user does not have password, then this user was created when a document was shared for signing, so update the user
+            // with additional details.
+            // load the user.
+            User user = User.getUser(emailId);
+            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                // user already exists
+                request.setAttribute("errors", "Email address already exists.");
+                response.sendRedirect("signup.jsp");
+                return;
+            }
+
+           // update user.
+           user.setPassword(password);
+           user.update();
+        }else{
+            // create user.
+            User esignUser = new User(userName, password, emailId, new Date());
+            esignUser.insert();
+        }
+
+        response.sendRedirect("login.jsp");
     }
 
     private String validateUser(String userName, String password, String confirmPassword, String emailId) {
@@ -81,12 +158,8 @@ public class registrationServlet extends HttpServlet {
             return "Please specify an email address.";
         }
 
-        try {
-            if (isDuplicateEmail(emailId)) {
-                return "Email address already exists.";
-            }
-        } catch (Exception ex) {
-            Logger.getLogger(registrationServlet.class.getName()).log(Level.SEVERE, null, ex);
+        if (!EmailValidator.getInstance().isValid(emailId)) {
+            return "Please specify a valid email address.";
         }
 
         return "";

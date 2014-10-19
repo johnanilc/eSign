@@ -6,13 +6,9 @@
 
 package servlets;
 
-import Db.DbConnection;
 import classes.User;
 import classes.UserSession;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,7 +41,7 @@ public class loginServlet extends HttpServlet {
             // verify password
             String userName = request.getParameter("user_name");
             String password = request.getParameter("password");
-            User user = getUser(userName, password);
+            User user = User.getUser(userName, password);
             if (user != null){
                 // navigate the user to the dashboard console.
                 HttpSession session = request.getSession();
@@ -62,24 +58,6 @@ public class loginServlet extends HttpServlet {
         } catch (Exception ex) {
             Logger.getLogger(loginServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
-    
-    private User getUser(String userName, String password) throws Exception{
-        try (Connection conn = DbConnection.getConnection()){
-            String sql = "select * from user where user_name = '" + userName + "' and password = '" + password + "'";
-            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-                if(rs.next()){
-                    User user = new User(rs.getInt("user_id"));
-                    user.setUserName(rs.getString("user_name"));
-                    user.setPassword(rs.getString("password"));
-                    user.setCreatedDate(rs.getDate("created_date"));
-                    user.setSignature(rs.getBinaryStream("signature"));
-                    user.setEmailId(rs.getString("email_id"));
-                    return user;
-                }
-            }
-        }
-        return null;
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

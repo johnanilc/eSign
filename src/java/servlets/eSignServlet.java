@@ -8,14 +8,10 @@ package servlets;
 import classes.Document;
 import classes.DocumentSignature;
 import classes.User;
-import com.itextpdf.text.Image;
-import com.itextpdf.text.pdf.PdfContentByte;
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.PdfStamper;
+import classes.UserSession;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -72,7 +68,7 @@ public class eSignServlet extends HttpServlet {
                  // create pdf with signatures.
                 int documentId = Integer.parseInt(request.getParameter("document_id"));
                 Document document = Document.getDocument(documentId);
-                signDocument(response, document, User.getUser(request));
+                signDocument(document, getUser(request));
             }
             
             response.sendRedirect("userServlet");
@@ -106,14 +102,19 @@ public class eSignServlet extends HttpServlet {
                 
                 // show document for signing
                 int pages = getPageCount(document);
-                response.sendRedirect("signDocument.jsp?document_id=" + documentId + "&pages=" + pages);
+                response.sendRedirect("sign_document.jsp?document_id=" + documentId + "&pages=" + pages);
             }
         } catch (Exception ex) {
             Logger.getLogger(eSignServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    private User getUser(HttpServletRequest request){
+        UserSession session = (UserSession) request.getSession().getAttribute("user_session");
+        return session.getUser();
+    }
 
-    private void signDocument(HttpServletResponse response, Document document, User user) throws Exception {
+    private void signDocument(Document document, User user) throws Exception {
         ArrayList<DocumentSignature> documentSignatures = getTranslatedDocumentSignatures(document.getDocumentId(), user.getUserId());
         // save the document signatures
         DocumentSignature.insertSignatures(document.getDocumentId(), documentSignatures, user.getUserId());

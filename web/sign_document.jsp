@@ -1,5 +1,5 @@
 <%-- 
-    Document   : signDocument
+    Document   : sign_document
     Created on : Aug 24, 2014, 4:32:17 PM
     Author     : johnanilc
 --%>
@@ -147,9 +147,9 @@
                     </table>
                 </td>
                 <td width="25%">
-                    <form name="signDocument" method="post" action="eSignServlet">
+                    <form name="sign_document" method="post" action="eSignServlet">
                         <input type="hidden" name="document_id" value="<%=documentId%>" />
-                        <input type="submit" value="Sign" />
+                        <input type="submit" value="Complete Signing" />
                     </form>
                 </td>
             </tr>

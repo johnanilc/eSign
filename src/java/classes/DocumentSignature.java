@@ -6,7 +6,8 @@
 
 package classes;
 
-import Db.DbConnection;
+import db.DbConnection;
+import classes.DocumentSigner.ParticipantSigner;
 import com.itextpdf.text.Image;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfReader;
@@ -150,31 +151,47 @@ public class DocumentSignature{
         }
     }
     
-    public static ByteArrayOutputStream getSignedDocument(Document document, User user) throws Exception{
-        PdfReader reader = new PdfReader(document.getContent());
+    public static ByteArrayOutputStream getSignedDocument(Document document) throws Exception {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
+        
+        // get all signers of the document
+        ArrayList<ParticipantSigner> signers = DocumentSigner.getParticipantSigners(document.getDocumentId());
+        
+        for (ParticipantSigner signer : signers){
+            User user = new User(signer.getSignerId());
+            getSignedDocumentByUser(os, document, user);
+        }
+        
+        return os;
+    }
+    
+    private static void getSignedDocumentByUser(ByteArrayOutputStream os, Document document, User user) throws Exception{
+        PdfReader reader = new PdfReader(document.getContent());
         PdfStamper stamper = new PdfStamper(reader, os);
+        
+        if (user.getSignature() == null){
+            return;
+        }
 
         // get user signature
         Image signatureImage = Image.getInstance(getImageBytes(user.getSignature()));
         try{
-            for (DocumentSignature signature : getDocumentSignatures(document.getDocumentId())){
+            for (DocumentSignature signature : getDocumentSignatures(document.getDocumentId(), user.getUserId())){
                 int x = signature.getSignLocationX();
                 int y = signature.getSignLocationY();
                 signatureImage.setAbsolutePosition(x, y);
                 PdfContentByte canvas = stamper.getOverContent(signature.getPageNumber());
                 canvas.addImage(signatureImage);
             }
-            return os;
         }finally{
             stamper.close();
         }
     }
     
-    private static ArrayList<DocumentSignature> getDocumentSignatures(int documentId) throws Exception{
+    private static ArrayList<DocumentSignature> getDocumentSignatures(int documentId, int userId) throws Exception{
         ArrayList<DocumentSignature> signatures = new ArrayList<>();
          try (Connection conn = DbConnection.getConnection()) {
-            String sql = "select * from document_signature where document_id = " + documentId;
+            String sql = "select * from document_signature where document_id = " + documentId + " and signer_id = " + userId;
             try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
                 while (rs.next()) {
                     DocumentSignature signature = new DocumentSignature(rs.getInt("document_signature_id"));
