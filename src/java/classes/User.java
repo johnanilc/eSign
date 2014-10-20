@@ -157,7 +157,7 @@ public class User {
             // sends the statement to the database server
             int row = statement.executeUpdate();
             if (row > 0) {
-                System.out.println("Signature saved into database");
+                System.out.println("Signature saved into database for user - " + userName);
             }
         }
     }
@@ -177,7 +177,7 @@ public class User {
 
     public static User getUser(String userName, String password) throws Exception {
         try (Connection conn = DbConnection.getConnection()) {
-            String sql = "select * from user where user_name = '" + userName + "' and password = '" + password + "'";
+            String sql = "select * from user where email_id = '" + userName + "' and password = '" + password + "'";
             try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
                 if (rs.next()) {
                     return getUser(rs);

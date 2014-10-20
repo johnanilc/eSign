@@ -143,8 +143,8 @@ public class eSignServlet extends HttpServlet {
             List<PDPage> pages = doc.getDocumentCatalog().getAllPages();
             PDPage page = pages.get(pageNum);
             BufferedImage image = page.convertToImage();
-            System.out.println("Image height " + image.getHeight());
-            System.out.println("Image width " + image.getWidth());
+            //System.out.println("Image height " + image.getHeight());
+            //System.out.println("Image width " + image.getWidth());
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             ImageIO.write(image, "png", outStream);
             byte[] imageBytes = outStream.toByteArray();

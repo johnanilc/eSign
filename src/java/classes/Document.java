@@ -129,6 +129,21 @@ public class Document {
           }
         }
     }
+    
+     public static void updateLastSignedDate (int documentId, Date signedDate) throws Exception{
+         try (Connection conn = DbConnection.getConnection()) {
+            String sql = "update document set last_signed_date = ? where document_id = ?";
+            PreparedStatement statement = conn.prepareStatement(sql);
+            statement.setTimestamp(1, new java.sql.Timestamp(signedDate.getTime()));
+            statement.setInt(2, documentId);
+
+            // sends the statement to the database server
+            int row = statement.executeUpdate();
+            if (row > 0) {
+                System.out.println("Document last signed date updated");
+            }
+        }
+    }
 
     public static Document getDocument(int documentId) throws Exception {
         Document document = new Document(documentId);

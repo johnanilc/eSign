@@ -8,12 +8,20 @@ package servlets;
 import classes.Document;
 import classes.User;
 import classes.UserSession;
+import com.google.gson.Gson;
+import java.awt.Font;
+import java.awt.Color;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -30,6 +38,10 @@ import javax.servlet.http.Part;
 @MultipartConfig(maxFileSize = 16177215) //upload file upto 16 MB
 public class userServlet extends HttpServlet {
 
+    private static final String SIGNATURE_FONT_NAME = "Lucida Handwriting";
+    private static final int SIGNATURE_FONT_SIZE = 16;
+    private static final int SIGNATURE_FONT_STYLE = Font.BOLD+Font.ITALIC;
+
     /**
      * Processes post requests for both HTTP <code>GET</code> and
      * <code>POST</code> methods.
@@ -44,22 +56,90 @@ public class userServlet extends HttpServlet {
         try {
             User user = getUser(request);
 
-            Part filePart;
-            if (request.getPart("document") != null) {
-                filePart = request.getPart("document");
-                uploadDocument(request, filePart, user);
-            } else if (request.getPart("signature") != null) {
-                filePart = request.getPart("signature");
-                uploadSignature(request, filePart, user);
+            String signatureName = request.getParameter("signature_name");
+            if (signatureName != null) {
+                // signature creation
+                String signatureOutput = request.getParameter("signature_output");
+                createSignature(user, signatureName, signatureOutput);
+            } else {
+                Part filePart;
+                if (request.getPart("document") != null) {
+                    filePart = request.getPart("document");
+                    uploadDocument(request, filePart, user);
+                } else if (request.getPart("signature") != null) {
+                    filePart = request.getPart("signature");
+                    uploadSignature(request, filePart, user);
+                }
             }
 
-            response.sendRedirect("userServlet");
+            response.sendRedirect("upload_document.jsp");
         } catch (Exception ex) {
             Logger.getLogger(userServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private User getUser(HttpServletRequest request){
+
+    private void createSignature(User user, String signatureName, String signatureOutput) throws Exception {
+        BufferedImage signatureImage;
+        if (signatureOutput != null && !signatureOutput.isEmpty()) {
+            // create signature from image
+            signatureImage = convertJsonToImage(signatureOutput);
+        } else {
+            signatureImage = createImageFromText(signatureName);
+        }
+
+        // save to database against user
+        insertSignature(user, signatureImage);
+    }
+
+    private BufferedImage createImageFromText(String signatureName) {
+        /*
+         Because font metrics is based on a graphics context, we need to create
+         a small, temporary image so we can ascertain the width and height
+         of the final image
+         */
+        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
+        Font font = new Font(SIGNATURE_FONT_NAME, SIGNATURE_FONT_STYLE, SIGNATURE_FONT_SIZE);
+        g2d.setFont(font);
+        FontMetrics fm = g2d.getFontMetrics();
+        int width = fm.stringWidth(signatureName)+10;
+        int height = fm.getHeight();
+        g2d.dispose();
+
+        // create signature image from text
+        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        g2d = img.createGraphics();
+        g2d.setFont(font);
+        fm = g2d.getFontMetrics();
+        g2d.setColor(Color.BLACK);
+        g2d.drawString(signatureName, 0, fm.getAscent());
+        g2d.dispose();
+        
+        return img;
+    }
+
+    private void insertSignature(User user, BufferedImage signatureImage) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(signatureImage, "png", baos);
+        user.setSignature(new ByteArrayInputStream(baos.toByteArray()));
+        user.insertSignature();
+    }
+
+    private static BufferedImage convertJsonToImage(String jsonString) {
+        Gson gson = new Gson();
+        SignatureLine[] signatureLines = gson.fromJson(jsonString, SignatureLine[].class);
+        BufferedImage offscreenImage = new BufferedImage(200, 50, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2 = offscreenImage.createGraphics();
+        g2.setColor(Color.white);
+        g2.fillRect(0, 0, 200, 50);
+        g2.setPaint(Color.black);
+        for (SignatureLine line : signatureLines) {
+            g2.drawLine(line.lx, line.ly, line.mx, line.my);
+        }
+        return offscreenImage;
+    }
+
+    private User getUser(HttpServletRequest request) {
         UserSession session = (UserSession) request.getSession().getAttribute("user_session");
         return session.getUser();
     }
@@ -92,7 +172,7 @@ public class userServlet extends HttpServlet {
             if (request.getParameter("signature_image") != null) {
                 // get signature image
                 if (user.getSignature() != null) {
-                  renderSignatureImage(user.getSignature(), response);
+                    renderSignatureImage(user.getSignature(), response);
                 }
             } else {
                 // show user dashboard
@@ -102,7 +182,7 @@ public class userServlet extends HttpServlet {
             System.out.println(e.getMessage());
         }
     }
-    
+
     private void renderSignatureImage(InputStream signature, HttpServletResponse response) throws Exception {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
 
@@ -128,7 +208,7 @@ public class userServlet extends HttpServlet {
         }
         return "";
     }
-    
+
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.
@@ -167,4 +247,44 @@ public class userServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
+
+    private static class SignatureLine {
+
+        int lx, ly, mx, my;
+
+        public SignatureLine() {
+        }
+
+        public int getLx() {
+            return lx;
+        }
+
+        public void setLx(int lx) {
+            this.lx = lx;
+        }
+
+        public int getLy() {
+            return ly;
+        }
+
+        public void setLy(int ly) {
+            this.ly = ly;
+        }
+
+        public int getMx() {
+            return mx;
+        }
+
+        public void setMx(int mx) {
+            this.mx = mx;
+        }
+
+        public int getMy() {
+            return my;
+        }
+
+        public void setMy(int my) {
+            this.my = my;
+        }
+    }
 }

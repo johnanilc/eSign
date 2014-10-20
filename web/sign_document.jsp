@@ -98,7 +98,7 @@
                     sign.style.position = 'absolute';
                     sign.style.left = left + 'px';
                     sign.style.top = top + 'px';
-                    sign.style.width = '100px';
+                    sign.style.width = '150px';
                     sign.addEventListener('dragstart', function() {drag(event);}, false);
                     ev.target.parentNode.appendChild(sign);
                     

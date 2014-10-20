@@ -40,15 +40,16 @@
                 <tr>
                     <td>Signature </td>
                     <td><input type="file" name="signature" accept="image/*"/></td>
+                    <td><a href="create_signature.jsp">Create Signature</a></td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td colspan="3">
                         <input type="submit" value="Save">
                     </td>
                 </tr>
                 <% if (request.getAttribute("signature_upload") != null) { %>
                 <tr>
-                    <td colspan="2"><div><%=request.getAttribute("signature_upload")%><div></td>
+                    <td colspan="3"><div><%=request.getAttribute("signature_upload")%><div></td>
                 </tr>
                 <% } %>
             </table>
@@ -58,7 +59,7 @@
             <table width="100%">
                 <tr>
                     <td colspan="2">
-                        <img src="userServlet?signature_image=1" />
+                        <img src="userServlet?signature_image=<%=System.currentTimeMillis()%>" />
                     </td>
                 </tr>
             </table>
