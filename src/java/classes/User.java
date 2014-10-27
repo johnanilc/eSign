@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  *
@@ -193,28 +192,19 @@ public class User {
         return user;
     }
 
-    public static ArrayList<DocumentDetail> getUserDocuments(int userId) throws Exception {
+    public static ArrayList<DocumentDetail> getUserDocuments(int userId, boolean isShared) throws Exception {
         ArrayList<DocumentDetail> documents = new ArrayList<>();
 
-        //get own documents
+        //get own documents & documents shared for signing from document_signer but exclude owned documents.
         try (Connection conn = DbConnection.getConnection()) {
-            String sql = "select * from document d inner join user u on u.user_id = d.owner_id where owner_id = " + userId + " order by d.document_id desc";
-            try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-                while (rs.next()) {
-                    Document document = new Document(rs.getInt("document_id"));
-                    document.setName(rs.getString("name"));
-                    document.setContent(rs.getBlob("content").getBinaryStream());
-                    document.setUpdatedDate(rs.getTimestamp("date_updated"));
-                    document.setOwnerId(rs.getInt("owner_id"));
-                    document.setLastSignedDate(rs.getTimestamp("last_signed_date"));
-                    documents.add(new DocumentDetail(rs.getString("user_name").toUpperCase(), document));
-                }
+            String sql = "";
+            if (!isShared) {
+                sql = "select d.document_id, d.name, d.content, d.date_updated, d.owner_id, d.last_signed_date, u.user_name from document d inner join user u on u.user_id = d.owner_id where owner_id = " + userId;
+            } else {
+                sql = "select d.document_id, d.name, d.content, d.date_updated, d.owner_id, d.last_signed_date, u.user_name from document_signer ds inner join document d on ds.document_id = d.document_id inner join user u on u.user_id = d.owner_id where ds.signer_id = " + userId + " and d.owner_id <> " + userId;
             }
-        }
-
-        //get shared documents
-        try (Connection conn = DbConnection.getConnection()) {
-            String sql = "select * from document_signer ds inner join document d on ds.document_id = d.document_id inner join user u on u.user_id = d.owner_id where ds.signer_id = " + userId + " order by d.document_id desc";
+            sql += " order by document_id desc";
+            
             try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
                 while (rs.next()) {
                     Document document = new Document(rs.getInt("document_id"));

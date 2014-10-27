@@ -54,7 +54,7 @@ public class userServlet extends HttpServlet {
     protected void processPostRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            User user = getUser(request);
+            User user = getUser(request, response);
 
             String signatureName = request.getParameter("signature_name");
             if (signatureName != null) {
@@ -139,8 +139,13 @@ public class userServlet extends HttpServlet {
         return offscreenImage;
     }
 
-    private User getUser(HttpServletRequest request) {
+    private User getUser(HttpServletRequest request, HttpServletResponse response) throws Exception {
         UserSession session = (UserSession) request.getSession().getAttribute("user_session");
+        if (session == null || session.getUser() == null){
+            response.sendRedirect("login.jsp");
+            return null;
+        }
+        
         return session.getUser();
     }
 
@@ -168,7 +173,7 @@ public class userServlet extends HttpServlet {
 
     protected void processGetRequest(HttpServletRequest request, HttpServletResponse response) {
         try {
-            User user = getUser(request);
+            User user = getUser(request, response);
             if (request.getParameter("signature_image") != null) {
                 // get signature image
                 if (user.getSignature() != null) {

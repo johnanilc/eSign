@@ -7,6 +7,7 @@ package servlets;
 
 import classes.Document;
 import classes.DocumentSignature;
+import classes.DocumentSigner;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -89,11 +90,19 @@ public class documentServlet extends HttpServlet {
         try {
             int documentId = Integer.parseInt(request.getParameter("document_id"));
 
-            // delete document.
-            Document.delete(documentId);
+            if (request.getParameter("delete_signer") != null) {
+                // delete document signer.
+                int signerId = Integer.parseInt(request.getParameter("signer_id"));
 
-            // redirect the user to dashboard
-            response.sendRedirect("userServlet");
+                DocumentSigner.delete(documentId, signerId);
+                response.sendRedirect("add_signer.jsp?document_id=" + documentId);
+            } else {
+                // delete document.
+                Document.delete(documentId);
+
+                // redirect the user to dashboard
+                response.sendRedirect("userServlet");
+            }
         } catch (Exception ex) {
             Logger.getLogger(documentServlet.class.getName()).log(Level.SEVERE, null, ex);
         }

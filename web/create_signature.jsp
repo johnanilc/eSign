@@ -14,9 +14,15 @@
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
     </head>
     <body>
-        <h1>Create Signature</h1>
-        <table width="100%">
+        <table width="100%" border="0">
             <tr>
+                <td/>
+                <td align="center">
+                    <h3>Create Signature</h3>
+                </td>
+            </tr>
+            <tr>
+                <td/>
                 <td align="center">
                     <form method="post" action="userServlet" class="sigPad">
                         <label for="name">Print your name</label>
@@ -38,6 +44,7 @@
                 </td>
             </tr>
             <tr>
+                <td/>
                 <td align="center">
                     <a href="userServlet">Go back</a>
                 </td>

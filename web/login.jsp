@@ -12,27 +12,32 @@
         <title>E-SIGN DOCUMENT SERVICE</title>
     </head>
     <body>
-        <h1>Login</h1>
         <form method="post" action="loginServlet">
             <table width="100%">
                 <tr>
-                    <td>
+                    <td/>
+                    <td colspan="2"> <h3>Login</h3></td>
+                </tr>
+                <tr>
+                    <td width="10%"/>
+                    <td align="left" width="10%">
                         Email
                     </td>
                     <td>
-                        <input type="text" name="user_name" />
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        Password
-                    </td>
-                    <td>
-                        <input type="password" name="password" />
+                        <input type="text" size="30px" name="user_name" />
                     </td>
                 </tr>
                 <tr>
                     <td/>
+                    <td align="left">
+                        Password
+                    </td>
+                    <td>
+                        <input type="password" size="30px" name="password" />
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2"/>
                     <td>
                         <input type="submit" value="Login">
                     </td>
@@ -41,9 +46,11 @@
                     <td colspan="2"><% if (request.getAttribute("message") != null) {%><div><%=request.getAttribute("message")%></div><% }%></td>
                 </tr>
                 <tr>
-                    <td colspan="2">
+                    <td colspan="2"/>
+                    <td>
                         <a href="signup.jsp">New User?</a>
                     </td>
+                    <td/>
                 </tr>
             </table>
         </form>

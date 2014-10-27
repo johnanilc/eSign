@@ -12,48 +12,59 @@
         <title>New User Registration</title>
     </head>
     <body>
-        <h1>Register User</h1>
         <form method="post" action="registrationServlet">
             <table width="100%">
                 <tr>
-                    <td>
-                        User Name
-                    </td>
-                    <td>
-                        <input type="text" name="user_name" />
+                    <td width="10%" />
+                    <td colspan="2">
+                        <h3>Register User</h3>
                     </td>
                 </tr>
                 <tr>
+                    <td width="10%"/>
+                    <td width="10%">
+                        User Name
+                    </td>
+                    <td>
+                        <input type="text" size="30px" name="user_name" />
+                    </td>
+                </tr>
+                <tr>
+                    <td/>
                     <td>
                         Email Id
                     </td>
                     <td>
-                        <input type="text" name="email_id" />
+                        <input type="text" size="30px" name="email_id" />
                     </td>
                 </tr>
                 <tr>
+                    <td/>
                     <td>
                         Password
                     </td>
                     <td>
-                        <input type="password" name="password" />
+                        <input type="password" size="30px" name="password" />
                     </td>
                 </tr>
                 <tr>
+                    <td/>
                     <td>
                         Confirm Password
                     </td>
                     <td>
-                        <input type="password" name="confirm_password" />
+                        <input type="password" size="30px" name="confirm_password" />
                     </td>
                 </tr>
                 <tr>
+                    <td/>
                     <td/>
                     <td>
                         <input type="submit" value="Save" />
                     </td>
                 </tr>
                 <tr>
+                    <td/>
                     <td colspan="2">
                         <% if (request.getAttribute("errors") != null) {%>
                             <div><%=request.getAttribute("errors")%><div>

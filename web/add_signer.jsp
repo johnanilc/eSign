@@ -13,7 +13,7 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>Add Signer</title>
+        <title>View/Add Signers</title>
     </head>
     <body>
         <h2>Enter Signer Details</h2>
@@ -68,6 +68,9 @@
                 <td>
                     <b>Signed Date</b>
                 </td>
+                 <td>
+                    <b>Signer IP Address</b>
+                </td>
             </tr>
             <% ArrayList<ParticipantSigner> signers = DocumentSigner.getParticipantSigners(documentId); %>
             <% int index = 1; %>
@@ -76,7 +79,24 @@
                 <td><%=index++%></td>
                 <td><%=signer.getSignerName()%></td>
                 <td><%=signer.getSignerEmail()%></td>
-                <td><%=signer.getSignedDate()%></td>
+                <td>
+                    <% if (signer.getSignedDate() != null) { %>
+                        <%=signer.getSignedDate()%>
+                    <% } %>
+                </td>
+                <td>
+                    <% if (signer.getSignerIPAddress() != null) { %>
+                        <%=signer.getSignerIPAddress()%>
+                    <% } %>
+                </td>
+                <td>
+                    <form method="post" action="documentServlet">
+                        <input type="hidden" name="delete_signer" value="1"/>
+                        <input type="hidden" name="document_id" value="<%=documentId%>"/>
+                        <input type="hidden" name="signer_id" value="<%=signer.getSignerId()%>"/>
+                        <input type="submit" value="Delete" onclick="return confirm('Are you sure you want to delete the signer ' + <%=signer.getSignerName()%> + ' and all his signatures in the document?')"/>
+                    </form>
+                </td>
             </tr>
             <% }%>
         </table>

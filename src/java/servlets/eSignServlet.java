@@ -40,8 +40,10 @@ public class eSignServlet extends HttpServlet {
 //
 //    private static final int pdfPageHeight = 770;
 //    private static final int pdfPageWidth = 523;
-
-
+    
+    private static final int PDF_PAGE_BOTTOM_LEFT_X_COORDINATE = 36;
+    private static final int PDF_PAGE_TOP_RIGHT_Y_COORDINATE = 806;
+    
     private static HashMap<String, Signature> signatures = new HashMap<>();
 
     protected void processPostRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -63,18 +65,32 @@ public class eSignServlet extends HttpServlet {
                 System.out.println("Updated Signature: " + signatureId);
                 return;
             }
-            
-            if (!signatures.isEmpty()){
-                 // create pdf with signatures.
+
+            if (!signatures.isEmpty()) {
+                // create pdf with signatures.
                 int documentId = Integer.parseInt(request.getParameter("document_id"));
                 Document document = Document.getDocument(documentId);
-                signDocument(document, getUser(request));
+                signDocument(document, getUser(request), getIpAddr(request));
             }
-            
+
             response.sendRedirect("userServlet");
         } catch (Exception ex) {
             Logger.getLogger(eSignServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public String getIpAddr(HttpServletRequest request) {
+        String ip = request.getHeader("x-forwarded-for");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
     }
 
     /**
@@ -90,16 +106,16 @@ public class eSignServlet extends HttpServlet {
         try {
             int documentId = Integer.parseInt(request.getParameter("document_id"));
             String pageNumber = request.getParameter("page_num");
-            
+
             Document document = Document.getDocument(documentId);
             if (pageNumber != null) {
                 // render pdf page as image.
                 int pageNum = Integer.parseInt(pageNumber);
                 renderPdfAsImage(response, document, pageNum);
             } else {
-                  // clear signatures if any set from previous load.
+                // clear signatures if any set from previous load.
                 signatures = new HashMap<>();
-                
+
                 // show document for signing
                 int pages = getPageCount(document);
                 response.sendRedirect("sign_document.jsp?document_id=" + documentId + "&pages=" + pages);
@@ -108,24 +124,24 @@ public class eSignServlet extends HttpServlet {
             Logger.getLogger(eSignServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private User getUser(HttpServletRequest request){
+
+    private User getUser(HttpServletRequest request) {
         UserSession session = (UserSession) request.getSession().getAttribute("user_session");
         return session.getUser();
     }
 
-    private void signDocument(Document document, User user) throws Exception {
+    private void signDocument(Document document, User user, String signerIPAddress) throws Exception {
         ArrayList<DocumentSignature> documentSignatures = getTranslatedDocumentSignatures(document.getDocumentId(), user.getUserId());
         // save the document signatures
-        DocumentSignature.insertSignatures(document.getDocumentId(), documentSignatures, user.getUserId());
+        DocumentSignature.insertSignatures(document.getDocumentId(), documentSignatures, user.getUserId(), signerIPAddress);
     }
-    
-    private ArrayList<DocumentSignature> getTranslatedDocumentSignatures(int documentId, int userId){
+
+    private ArrayList<DocumentSignature> getTranslatedDocumentSignatures(int documentId, int userId) {
         // translate signature locations from image to document coordinate system.
         ArrayList<DocumentSignature> documentSignatures = new ArrayList<>();
         for (Signature signature : signatures.values()) {
-            int x = 36 + signature.getLeft(); //* (pdfPageWidth / (pageImageWidth * pageImageWidthFactor));
-            int y = 806 - signature.getTop() - 100;// * (pdfPageHeight / (pageImageHeight * pageImageHeightFactor));
+            int x = PDF_PAGE_BOTTOM_LEFT_X_COORDINATE + signature.getLeft(); //* (pdfPageWidth / (pageImageWidth * pageImageWidthFactor));
+            int y = PDF_PAGE_TOP_RIGHT_Y_COORDINATE - signature.getTop() - 60;// * (pdfPageHeight / (pageImageHeight * pageImageHeightFactor));
             documentSignatures.add(new DocumentSignature(documentId, userId, signature.getPage() + 1, x, y));
         }
         return documentSignatures;
@@ -194,6 +210,7 @@ public class eSignServlet extends HttpServlet {
     }// </editor-fold>
 
     private class Signature {
+
         private String signatureId = "";
         private int page = 0;
         private int left = 0;

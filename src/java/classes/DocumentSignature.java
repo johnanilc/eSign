@@ -27,7 +27,7 @@ public class DocumentSignature {
 
     private static final float SIGNATURE_IMAGE_WIDTH = 140.0f;
     private static final float SIGNATURE_IMAGE_HEIGHT = 25.0f;
-    
+
     private int documentSignatureId = 0;
     private int documentId = 0;
     private int signerId = 0;
@@ -91,7 +91,7 @@ public class DocumentSignature {
         this.signLocationY = signLocationY;
     }
 
-    public static void insertSignatures(int documentId, ArrayList<DocumentSignature> signatures, int signerId) throws Exception {
+    public static void insertSignatures(int documentId, ArrayList<DocumentSignature> signatures, int signerId, String signerIPAddress) throws Exception {
         // delete exisiting signatures of the document
         deleteSignatures(documentId, signerId);
 
@@ -100,11 +100,21 @@ public class DocumentSignature {
             signature.insertSignature();
         }
 
-        // update last signed date of the document
-        Document.updateLastSignedDate(documentId, new Date());
+        Date signedDate = new Date();
 
-        // update signed date against the document signer
-        DocumentSigner.updateSignedDate(documentId, signerId, new Date());
+        // update last signed date of the document
+        Document.updateLastSignedDate(documentId, signedDate);
+
+        // update signed date & signer IP address against the document signer
+        int updateCount = DocumentSigner.updateSignDetails(documentId, signerId, signedDate, signerIPAddress);
+
+        if (updateCount == 0) {
+            // insert document signer
+            DocumentSigner signer = new DocumentSigner(documentId, signerId);
+            signer.setSignedDate(signedDate);
+            signer.setSignerIPAddress(signerIPAddress);
+            signer.insert();
+        }
     }
 
     public static void deleteSignatures(int documentId, int signerId) throws Exception {
@@ -162,6 +172,12 @@ public class DocumentSignature {
                     int y = signature.getSignLocationY();
                     //signatureImage.setAbsolutePosition(x, y);
                     PdfContentByte canvas = stamper.getOverContent(signature.getPageNumber());
+
+                    //System.out.println("bottom: " + canvas.getPdfDocument().bottom());
+                    //System.out.println("top: " + canvas.getPdfDocument().top());
+                    //System.out.println("left: " + canvas.getPdfDocument().left());
+                    //System.out.println("right: " + canvas.getPdfDocument().right());
+
                     //canvas.addImage(signatureImage);
                     canvas.addImage(signatureImage, SIGNATURE_IMAGE_WIDTH, 0, 0, SIGNATURE_IMAGE_HEIGHT, x, y);
                 }

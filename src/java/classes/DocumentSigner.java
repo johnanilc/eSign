@@ -25,12 +25,14 @@ public class DocumentSigner {
     private int documentId = 0;
     private int signerId = 0;
     private Date signedDate = null;
+    private String signerIPAddress = null;
 
-    public DocumentSigner(int documentSignerId, int documentId, int signerId, Date signedDate) {
+    public DocumentSigner(int documentSignerId, int documentId, int signerId, Date signedDate, String signerIPAddress) {
         this.documentSignerId = documentSignerId;
         this.documentId = documentId;
         this.signerId = signerId;
         this.signedDate = signedDate;
+        this.signerIPAddress = signerIPAddress;
     }
 
     public DocumentSigner(int documentId, int signerId) {
@@ -46,17 +48,30 @@ public class DocumentSigner {
         return signerId;
     }
 
-    public Date getSignedDate() {
-        return signedDate;
+    public String getSignerIPAddress() {
+        return signerIPAddress;
+    }
+
+    public String getSignedDate() {
+        if (signedDate == null) {
+            return "";
+        }
+
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        return df.format(signedDate);
     }
 
     public void setSignedDate(Date signedDate) {
         this.signedDate = signedDate;
     }
 
+    public void setSignerIPAddress(String signerIPAddress) {
+        this.signerIPAddress = signerIPAddress;
+    }
+
     public void insert() throws Exception {
         try (Connection conn = DbConnection.getConnection()) {
-            String sql = "INSERT INTO document_signer (document_id, signer_id, signed_date) values (?, ?, ?)";
+            String sql = "INSERT INTO document_signer (document_id, signer_id, signed_date, signer_ip_address) values (?, ?, ?, ?)";
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setInt(1, documentId);
             statement.setInt(2, signerId);
@@ -65,11 +80,30 @@ public class DocumentSigner {
             } else {
                 statement.setNull(3, java.sql.Types.DATE);
             }
+            statement.setString(4, signerIPAddress);
 
             // sends the statement to the database server
             int row = statement.executeUpdate();
             if (row > 0) {
                 System.out.println("Document signer saved into database");
+            }
+        }
+    }
+    
+    public static void delete(int documentId, int signerId) throws Exception{
+        // can only be done by the document owner
+        
+        // delete all signatures if any of the user against the document.
+        DocumentSignature.deleteSignatures(documentId, signerId);
+        
+        // delete the signer against the document.
+         try (Connection conn = DbConnection.getConnection()) {
+            String sql = "DELETE FROM document_signer WHERE document_id = " + documentId + " and signer_id = " + signerId;
+            PreparedStatement statement = conn.prepareStatement(sql);
+            // sends the statement to the database server
+            int row = statement.executeUpdate();
+            if (row > 0) {
+                System.out.println("Document signer deleted for document" + documentId);
             }
         }
     }
@@ -79,7 +113,7 @@ public class DocumentSigner {
         try (Connection conn = DbConnection.getConnection()) {
             String sql = "select * from document_signer ds inner join user u on u.user_id = ds.signer_id where document_id = " + documentId;
             try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-                if (rs.next()) {
+                while (rs.next()) {
                     ParticipantSigner signer = new ParticipantSigner(rs.getString("user_name"), rs.getString("email_id"), getDocumentSigner(rs));
                     signers.add(signer);
                 }
@@ -90,7 +124,7 @@ public class DocumentSigner {
     }
 
     public static DocumentSigner getDocumentSigner(ResultSet rs) throws Exception {
-        return new DocumentSigner(rs.getInt("document_signer_id"), rs.getInt("document_id"), rs.getInt("signer_id"), rs.getDate("signed_date"));
+        return new DocumentSigner(rs.getInt("document_signer_id"), rs.getInt("document_id"), rs.getInt("signer_id"), rs.getTimestamp("signed_date"), rs.getString("signer_ip_address"));
     }
 
     public static void deleteSigners(int documentId) throws Exception {
@@ -105,19 +139,22 @@ public class DocumentSigner {
         }
     }
 
-    public static void updateSignedDate(int documentId, int signerId, Date signedDate) throws Exception {
+    public static int updateSignDetails(int documentId, int signerId, Date signedDate, String signerIPAddress) throws Exception {
         try (Connection conn = DbConnection.getConnection()) {
-            String sql = "update document_signer set signed_date = ? where signer_id = ? and document_id = ?";
+            String sql = "update document_signer set signed_date = ?, signer_ip_address = ? where signer_id = ? and document_id = ?";
             PreparedStatement statement = conn.prepareStatement(sql);
             statement.setTimestamp(1, new java.sql.Timestamp(signedDate.getTime()));
-            statement.setInt(2, signerId);
-            statement.setInt(3, documentId);
+            statement.setString(2, signerIPAddress);
+            statement.setInt(3, signerId);
+            statement.setInt(4, documentId);
 
             // sends the statement to the database server
             int row = statement.executeUpdate();
             if (row > 0) {
                 System.out.println("Document last signed date updated against signer");
             }
+
+            return row;
         }
     }
 
@@ -146,12 +183,11 @@ public class DocumentSigner {
         }
 
         public String getSignedDate() {
-            if (signer.getSignedDate() == null) {
-                return "";
-            }
+            return signer.getSignedDate();
+        }
 
-            DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-            return df.format(signer.getSignedDate());
+        public String getSignerIPAddress() {
+            return signer.getSignerIPAddress();
         }
     }
 }

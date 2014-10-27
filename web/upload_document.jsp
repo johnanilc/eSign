@@ -27,86 +27,131 @@
         </script>
     </head>
     <body>
-        <table width="100%">
+        <table width="100%" border="0">
             <tr>
+                <td />
+                <td>
+                    <h2>E-Sign Dashboard</h2>
+                </td>
                 <td align="right"><a href="login.jsp">Logout</a></td>
+                <td/>
             </tr>
         </table>
-        <h1>E-Sign Dashboard</h1>
-        <h2>Upload Signature</h2>
         <% User user = ((UserSession)request.getSession().getAttribute("user_session")).getUser(); %>
         <form method="post" action="userServlet" enctype="multipart/form-data">
-            <table border="0">
+            <table border="0" width="100%">
                 <tr>
-                    <td>Signature </td>
-                    <td><input type="file" name="signature" accept="image/*"/></td>
-                    <td><a href="create_signature.jsp">Create Signature</a></td>
+                    <td width="1%"/>
+                    <td width="30%">
+                         <h3>Upload Signature</h3>
+                    </td>
+                    <td>
+                        (<a href="create_signature.jsp">Create Signature</a>)
+                    </td>
                 </tr>
                 <tr>
-                    <td colspan="3">
+                    <td/>
+                    <td>Signature&nbsp;&nbsp;<input type="file" name="signature" accept="image/*"/></td>
+                </tr>
+                <tr>
+                    <td/>
+                    <td colspan="2">
                         <input type="submit" value="Save">
                     </td>
                 </tr>
                 <% if (request.getAttribute("signature_upload") != null) { %>
                 <tr>
-                    <td colspan="3"><div><%=request.getAttribute("signature_upload")%><div></td>
+                    <td/>
+                    <td colspan="2"><div><%=request.getAttribute("signature_upload")%><div></td>
                 </tr>
                 <% } %>
             </table>
         </form>
         <% if(user.getSignature() != null) {%>
-            <h2>Uploaded Signature</h2>
-            <table width="100%">
+            <table width="100%" border="0">
                 <tr>
-                    <td colspan="2">
+                    <td width="1%"/>
+                    <td>
+                        <h3>Uploaded Signature</h3>
+                    </td>
+                    <td/>
+                </tr>
+                <tr>
+                    <td/>
+                    <td>
                         <img src="userServlet?signature_image=<%=System.currentTimeMillis()%>" />
                     </td>
+                    <td/>
                 </tr>
             </table>
         <% } %>
-        <h2>Upload Document</h2>
         <form method="post" action="userServlet" enctype="multipart/form-data">
-            <table border="0">
+            <table border="0" width="100%">
                 <tr>
-                    <td>Document: </td>
-                    <td><input type="file" name="document" accept="application/pdf"/></td>
+                    <td width="1%"/>
+                    <td>
+                        <h3>Upload Document</h3>
+                    </td>
+                    <td/>
                 </tr>
                 <tr>
+                    <td/>
+                    <td>Document&nbsp;&nbsp;<input type="file" name="document" accept="application/pdf"/></td>
+                </tr>
+                <tr>
+                    <td/>
                     <td colspan="2">
                         <input type="submit" value="Save">
                     </td>
                 </tr>
                 <% if (request.getAttribute("document_upload") != null) { %>
                 <tr>
+                    <td/>
                     <td colspan="2"><div><%=request.getAttribute("document_upload")%><div></td>
                 </tr>
                 <% } %>
             </table>
         </form>
-        <h2>Documents</h2>    
-        <% ArrayList<DocumentDetail> documents = User.getUserDocuments(user.getUserId()); %>
-        <table align="center" width="100%">
+        <% ArrayList<DocumentDetail> documents = User.getUserDocuments(user.getUserId(), false); %>
+        <table align="center" width="100%" border="0">
             <tr>
-                <td>
-                    <b>Document #</b>
+                <td width="1%"/>
+                <td colspan="9">
+                    <h3>Documents</h3>    
                 </td>
-                <td>
+            </tr>
+            <tr>
+                <td/>
+                <td width="2%">
+                    <b>No.</b>
+                </td>
+                <td width="30%">
                     <b>Name</b>
                 </td>
-                <td>
+                <td width="10%">
                     <b>Owner</b>
                 </td>
-                <td>
-                    <b>Uploaded Date</b>
+                <td width="13%">
+                    <b>Created</b>
                 </td>
-                <td>
-                    <b>Last Signed Date</b>
+                <td width="13%">
+                    <b>Last Signed</b>
                 </td>
+                <td width="4%">
+                </td>
+                <td width="13%">
+                </td>
+                <td width="5%">
+                </td>
+                <td width="10%">
+                </td>
+                <td/>
             </tr>
             <% for (int idx=0; idx<documents.size(); idx++) { %>
             <% DocumentDetail document = documents.get(idx); %>
             <% int documentId = document.getDocumentId(); %>
             <tr>
+                <td/>
                 <td>
                     <%=idx+1%>
                 </td>
@@ -129,21 +174,88 @@
                 </td>
                 <td>
                     <% if (document.getOwnerId() == user.getUserId()) {%>
-                    <a href="add_signer.jsp?document_id=<%=documentId%>">Add Signer</a>
+                    <a href="add_signer.jsp?document_id=<%=documentId%>">View/Add Signers</a>
                     <%}%>
-                </td>
-                <td>
-                     <% if (document.isSigned()) {%>
-                        <a href="documentServlet?document_id=<%=documentId%>&is_download=true">Download Signed PDF</a>
-                    <% } %>
                 </td>
                 <td>
                      <% if (document.getOwnerId() == user.getUserId()) {%>
                     <form method="post" action="documentServlet">
                         <input type="hidden" name="document_id" value="<%=documentId%>"/>
-                        <input type="submit" value="Delete" onclick="return deleteDocument(<%=document.getName()%>);"/></td>
+                        <input type="submit" value="Delete" onclick="return deleteDocument(<%=document.getName()%>);"/>
                     </form>
-                     <%}%>
+                     <% } %>
+                </td>
+                <td>
+                     <% if (document.isSigned()) {%>
+                        <a href="documentServlet?document_id=<%=documentId%>&is_download=true">Download</a>
+                    <% } %>
+                </td>
+                <td/>
+            </tr>
+            <% } %>
+        </table>
+        <% ArrayList<DocumentDetail> sharedDocuments = User.getUserDocuments(user.getUserId(), true); %>
+        <table align="center" width="100%" border="0">
+            <tr>
+                <td width="1%"/>
+                <td colspan="9">
+                    <h3>Shared Documents</h3>    
+                </td>
+            </tr>
+            <tr>
+                <td/>
+                <td width="2%">
+                    <b>No.</b>
+                </td>
+                <td width="30%">
+                    <b>Name</b>
+                </td>
+                <td width="10%">
+                    <b>Owner</b>
+                </td>
+                <td width="13%">
+                    <b>Created</b>
+                </td>
+                <td width="13%">
+                    <b>Last Signed</b>
+                </td>
+                <td width="4%">
+                </td>
+                <td width="5%">
+                </td>
+                <td/>
+            </tr>
+            <% for (int idx=0; idx<sharedDocuments.size(); idx++) { %>
+            <% DocumentDetail document = sharedDocuments.get(idx); %>
+            <% int documentId = document.getDocumentId(); %>
+            <tr>
+                <td/>
+                <td>
+                    <%=idx+1%>
+                </td>
+                <td>
+                    <a href="documentServlet?document_id=<%=documentId%>"><%=document.getName()%></a>
+                </td>
+                <td>
+                    <%=document.getOwnerName()%>
+                </td>
+                <td>
+                     <%=document.getUpdatedDate()%>
+                </td>
+                <td>
+                    <%=document.getLastSignedDate()%>
+                </td>
+                <td>
+                    <% if(user.getSignature() != null) {%>
+                        <a href="eSignServlet?document_id=<%=documentId%>">Sign</a>
+                    <% } %>
+                </td>
+                <td>
+                     <% if (document.isSigned()) {%>
+                        <a href="documentServlet?document_id=<%=documentId%>&is_download=true">Download</a>
+                    <% } %>
+                </td>
+                <td/>
             </tr>
             <% } %>
         </table>
