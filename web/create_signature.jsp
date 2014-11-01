@@ -30,8 +30,8 @@
                         <p class="typeItDesc">Review your signature</p>
                         <p class="drawItDesc">Draw your signature</p>
                         <ul class="sigNav">
-                            <li class="typeIt"><a href="#type-it" class="current">Type It</a></li>
-                            <li class="drawIt"><a href="#draw-it" >Draw It</a></li>
+                            <li class="typeIt"><a href="#type-it" class="current">Type</a></li>
+                            <li class="drawIt"><a href="#draw-it" >Draw</a></li>
                             <li class="clearButton"><a href="#clear">Clear</a></li>
                         </ul>
                         <div class="sig sigWrapper">

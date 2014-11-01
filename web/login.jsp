@@ -43,14 +43,15 @@
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="2"><% if (request.getAttribute("message") != null) {%><div><%=request.getAttribute("message")%></div><% }%></td>
-                </tr>
-                <tr>
                     <td colspan="2"/>
                     <td>
                         <a href="signup.jsp">New User?</a>
                     </td>
                     <td/>
+                </tr>
+                 <tr>
+                    <td/>
+                    <td colspan="2" style="color: red"><% if (request.getAttribute("message") != null) {%><div><%=request.getAttribute("message")%></div><% }%></td>
                 </tr>
             </table>
         </form>

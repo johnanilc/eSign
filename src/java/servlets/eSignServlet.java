@@ -111,7 +111,7 @@ public class eSignServlet extends HttpServlet {
             if (pageNumber != null) {
                 // render pdf page as image.
                 int pageNum = Integer.parseInt(pageNumber);
-                renderPdfAsImage(response, document, pageNum);
+                renderPdfPagesAsImages(response, document, pageNum);
             } else {
                 // clear signatures if any set from previous load.
                 signatures = new HashMap<>();
@@ -154,13 +154,11 @@ public class eSignServlet extends HttpServlet {
         }
     }
 
-    private void renderPdfAsImage(HttpServletResponse response, Document document, int pageNum) throws Exception {
+    private void renderPdfPagesAsImages(HttpServletResponse response, Document document, int pageNum) throws Exception {
         try (PDDocument doc = PDDocument.load(document.getContent())) {
             List<PDPage> pages = doc.getDocumentCatalog().getAllPages();
             PDPage page = pages.get(pageNum);
             BufferedImage image = page.convertToImage();
-            //System.out.println("Image height " + image.getHeight());
-            //System.out.println("Image width " + image.getWidth());
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             ImageIO.write(image, "png", outStream);
             byte[] imageBytes = outStream.toByteArray();

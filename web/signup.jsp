@@ -65,7 +65,7 @@
                 </tr>
                 <tr>
                     <td/>
-                    <td colspan="2">
+                    <td colspan="2" style="color: red">
                         <% if (request.getAttribute("errors") != null) {%>
                             <div><%=request.getAttribute("errors")%><div>
                         <% } %>

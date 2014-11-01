@@ -105,8 +105,9 @@ public class registrationServlet extends HttpServlet {
         String validations = validateUser(userName, password, confirmPassword, emailId);
 
         if (validations.length() > 0) {
+            System.out.println("validation errors " + validations);
             request.setAttribute("errors", validations);
-            response.sendRedirect("signup.jsp");
+            request.getRequestDispatcher("signup.jsp").forward(request, response);
             return;
         }
 
@@ -120,8 +121,9 @@ public class registrationServlet extends HttpServlet {
             User user = User.getUser(emailId);
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
                 // user already exists
+                System.out.println("user exists");
                 request.setAttribute("errors", "Email address already exists.");
-                response.sendRedirect("signup.jsp");
+                request.getRequestDispatcher("signup.jsp").forward(request, response);
                 return;
             }
 
